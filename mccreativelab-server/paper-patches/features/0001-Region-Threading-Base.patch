@@ -793,7 +793,7 @@ index 2d41914a6a1f61b1c100b27bc0ea230332f8f243..0ef9ddb8e409d4fbef270b3ea375c236
                  MinecraftServer.LOGGER.warn("Asynchronous " + reason + "!", new IllegalStateException());
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab8462727f0d0013 100644
+index 3edb20efaf058f49de16449c2bcc82f1010dcd6d..d1fc69c3473ed04c7ca0b20dd2fc6e9881cbd3d2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -289,7 +289,7 @@ public final class CraftServer implements Server {
@@ -814,7 +814,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
      }
      // Paper end - Folia reagion threading API
  
-@@ -895,11 +895,44 @@ public final class CraftServer implements Server {
+@@ -902,11 +902,44 @@ public final class CraftServer implements Server {
          return this.playerList;
      }
  
@@ -859,7 +859,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
          CommandSourceStack sourceStack = VanillaCommandWrapper.getListener(rawSender);
  
          String command = StringUtils.normalizeSpace(commandLine.trim());
-@@ -1147,6 +1180,7 @@ public final class CraftServer implements Server {
+@@ -1154,6 +1187,7 @@ public final class CraftServer implements Server {
  
      @Override
      public World createWorld(WorldCreator creator) {
@@ -867,7 +867,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
          Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
-@@ -1304,6 +1338,7 @@ public final class CraftServer implements Server {
+@@ -1311,6 +1345,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean unloadWorld(World world, boolean save) {
@@ -875,7 +875,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
          //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
          if (world == null) {
              return false;
-@@ -2710,8 +2745,23 @@ public final class CraftServer implements Server {
+@@ -2717,8 +2752,23 @@ public final class CraftServer implements Server {
  
      @Override
      public double getAverageTickTime() {
@@ -901,7 +901,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
      }
  
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
-@@ -2768,7 +2818,27 @@ public final class CraftServer implements Server {
+@@ -2775,7 +2825,27 @@ public final class CraftServer implements Server {
  
      @Override
      public double[] getTPS() {
@@ -930,7 +930,7 @@ index 549864ac47c1a6805403ee56fc110d09da2a01c3..a596b17af910f34c2719c423ab846272
      }
  
      @Override
-@@ -2938,7 +3008,7 @@ public final class CraftServer implements Server {
+@@ -2945,7 +3015,7 @@ public final class CraftServer implements Server {
  
      @Override
      public int getCurrentTick() {
