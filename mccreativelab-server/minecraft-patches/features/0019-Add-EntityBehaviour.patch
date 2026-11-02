@@ -5,10 +5,10 @@ Subject: [PATCH] Add EntityBehaviour
 
 
 diff --git a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
-index 11d4f2d5caba52b492b8e130faa4701f3980b0f1..c72e0b990fd8e93ed830ac125b9b309d30b41eb5 100644
+index ca5065d057d039aaaa2334534edae351749cc7a0..61a677ab87de8e4e63d27715cf3ad99f62510faa 100644
 --- a/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 +++ b/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
-@@ -2101,7 +2101,7 @@ public final class CollisionUtil {
+@@ -2112,7 +2112,7 @@ public final class CollisionUtil {
                  continue;
              }
  
@@ -18,10 +18,10 @@ index 11d4f2d5caba52b492b8e130faa4701f3980b0f1..c72e0b990fd8e93ed830ac125b9b309d
                      return true;
                  } else {
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 1136aa375b08ae5383c40916067a234cfc842b72..fb27374a3cb39b383198d25d1b6c6a2ea7b44e45 100644
+index c6810e37a78ff358d473651fb55a8f0900ce8b3f..8acf22b34a11d4fc19adbe5d688efe68aee787fd 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2912,7 +2912,7 @@ public class ServerGamePacketListenerImpl
+@@ -2987,7 +2987,7 @@ public class ServerGamePacketListenerImpl
                          if (target instanceof ItemEntity
                              || target instanceof ExperienceOrb
                              || target == this.player
@@ -44,7 +44,7 @@ index e83bddd0ad8a64b0accdd7c7ffed33a3d91f5900..f4b0c56dcbb540ddeb36a3e1f7901c41
  
          to.setLeftHanded(from.isLeftHanded());
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55c99d79e9 100644
+index bfd72a31c1a8c370c7b3bf928abdc484d56a98b1..da04681491d07eaf410ec63e355cad0dc3cbc2f3 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -1,5 +1,6 @@
@@ -64,15 +64,15 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
      static boolean isLevelAtLeast(ValueInput input, int level) {
-@@ -889,6 +891,7 @@ public abstract class Entity
+@@ -906,6 +908,7 @@ public abstract class Entity
  
      // CraftBukkit start
      public void postTick() {
 +        mcc$onTick();
          // No clean way to break out of ticking once the entity has been copied to a new world, so instead we move the portalling later in the tick cycle
          if (!(this instanceof ServerPlayer) && this.isAlive()) { // Paper - don't attempt to teleport dead entities
-             this.handlePortal();
-@@ -922,7 +925,7 @@ public abstract class Entity
+             //this.handlePortal(); // Folia - region threading
+@@ -939,7 +942,7 @@ public abstract class Entity
          this.updateSwimming();
          if (this.level() instanceof ServerLevel serverLevel) {
              if (this.remainingFireTicks > 0) {
@@ -81,7 +81,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
                      this.clearFire();
                  } else {
                      if (this.remainingFireTicks % 20 == 0 && !this.isInLava()) {
-@@ -977,7 +980,7 @@ public abstract class Entity
+@@ -994,7 +997,7 @@ public abstract class Entity
              && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
              && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
              // Paper end - Configurable nether ceiling damage
@@ -90,7 +90,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
          }
      }
  
-@@ -1010,7 +1013,7 @@ public abstract class Entity
+@@ -1027,7 +1030,7 @@ public abstract class Entity
  
      public void lavaIgnite(@Nullable BlockPos pos) {
          // Paper end - track lava contact
@@ -99,7 +99,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
              // CraftBukkit start - Fallen in lava TODO: this event spams!
              if (this instanceof net.minecraft.world.entity.LivingEntity && this.remainingFireTicks <= 0) {
                  // not on fire yet
-@@ -1036,7 +1039,7 @@ public abstract class Entity
+@@ -1053,7 +1056,7 @@ public abstract class Entity
  
      public void lavaHurt(@Nullable BlockPos pos) {
          // Paper end - track lava contact
@@ -108,7 +108,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
              if (this.level() instanceof ServerLevel serverLevel
                  && this.hurtServer(serverLevel, this.damageSources().lava().eventBlockDamager(this.level, pos), 4.0F) // CraftBukkit - we also don't throw an event unless the object in lava is living, to save on some event calls
                  && this.shouldPlayLavaHurtSound()
-@@ -1090,7 +1093,7 @@ public abstract class Entity
+@@ -1107,7 +1110,7 @@ public abstract class Entity
          this.setRemainingFireTicks(Math.min(0, this.getRemainingFireTicks()));
      }
  
@@ -117,7 +117,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
          this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.OUT_OF_WORLD); // CraftBukkit - add Bukkit remove cause
      }
  
-@@ -2136,7 +2139,7 @@ public abstract class Entity
+@@ -2158,7 +2161,7 @@ public abstract class Entity
      }
  
      public boolean fireImmune() {
@@ -126,7 +126,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
      }
  
      public boolean causeFallDamage(final double fallDistance, final float damageModifier, final DamageSource damageSource) {
-@@ -2806,6 +2809,7 @@ public abstract class Entity
+@@ -2828,6 +2831,7 @@ public abstract class Entity
                      output.discard("Passengers");
                  }
              }
@@ -134,7 +134,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
              // CraftBukkit start - stores eventually existing bukkit values
              if (this.bukkitEntity != null) {
                  this.bukkitEntity.storeBukkitValues(output);
-@@ -2924,6 +2928,7 @@ public abstract class Entity
+@@ -2946,6 +2950,7 @@ public abstract class Entity
  
              // CraftBukkit start
              // Paper - move world parsing/loading to PlayerList#placeNewPlayer
@@ -142,7 +142,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
              this.getBukkitEntity().readBukkitValues(input);
              input.read("Bukkit.invisible", Codec.BOOL).ifPresent(bukkitInvisible -> {
                  this.setInvisible(bukkitInvisible);
-@@ -2951,7 +2956,7 @@ public abstract class Entity
+@@ -2973,7 +2978,7 @@ public abstract class Entity
              if (spawnReason == null) {
                  if (spawnedViaMobSpawner) {
                      spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER;
@@ -151,7 +151,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
                      if (!input.getBooleanOr("PersistenceRequired", false)) {
                          spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL;
                      }
-@@ -3401,7 +3406,7 @@ public abstract class Entity
+@@ -3423,7 +3428,7 @@ public abstract class Entity
              return false;
          }
  
@@ -160,7 +160,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
              return false;
          }
  
-@@ -3571,7 +3576,7 @@ public abstract class Entity
+@@ -3597,7 +3602,7 @@ public abstract class Entity
          return this.passengers.isEmpty();
      }
  
@@ -169,7 +169,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
          return true;
      }
  
-@@ -3721,7 +3726,7 @@ public abstract class Entity
+@@ -3750,7 +3755,7 @@ public abstract class Entity
  
      public boolean isOnFire() {
          boolean isClientSide = this.level() != null && this.level().isClientSide();
@@ -178,7 +178,7 @@ index 267be9e775b8bb8c816c79fb4357a3ef23317b40..e6a5d6a18e0d1af3be90f658f8a88f55
      }
  
      public boolean isPassenger() {
-@@ -4150,7 +4155,7 @@ public abstract class Entity
+@@ -4184,7 +4189,7 @@ public abstract class Entity
      public final boolean isInvulnerableToBase(final DamageSource source) {
          return this.isRemoved()
              || this.isInvulnerable() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !source.isCreativePlayer()
@@ -201,7 +201,7 @@ index 98034a4c96bf2972316078d3b3a49140921aab50..61423c767452581d8f65657bfcd7e3fd
  
      default double leashDistanceTo(final Entity entity) {
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 23297b54c74684765f90e9e599d051a44357e9a5..371830b3033f839e0222a1bb47277c9dd73d3cdd 100644
+index d3205c5dc79d195d0eeab3f78ae07b8d23d5c9b7..85981cfb138f857c1cb42bfe1c91b89d39a5ebf2 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -1,5 +1,6 @@
@@ -220,7 +220,7 @@ index 23297b54c74684765f90e9e599d051a44357e9a5..371830b3033f839e0222a1bb47277c9d
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
      public static final String TAG_ATTRIBUTES = "attributes";
-@@ -2793,7 +2794,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -2816,7 +2817,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
      }
  
      @Override
@@ -229,15 +229,6 @@ index 23297b54c74684765f90e9e599d051a44357e9a5..371830b3033f839e0222a1bb47277c9d
          this.hurt(this.damageSources().fellOutOfWorld(), this.level().getWorld().getVoidDamageAmount()); // Paper - use configured void damage amount
      }
  
-@@ -3823,7 +3824,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
-             }
-         }
-         // Paper end - Add EntityMoveEvent
--        if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
-+        if (this.level() instanceof ServerLevel serverLevel && this.mcc$isSensitiveToWater() && this.isInWaterOrRain()) {
-             this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
-         }
-     }
 diff --git a/net/minecraft/world/entity/Marker.java b/net/minecraft/world/entity/Marker.java
 index 8609b2c851a3964bb63a4d6862a90b453aa8172c..389443f1625665073655e3478135ac4b130d0178 100644
 --- a/net/minecraft/world/entity/Marker.java
@@ -252,7 +243,7 @@ index 8609b2c851a3964bb63a4d6862a90b453aa8172c..389443f1625665073655e3478135ac4b
      }
  
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e4d7d1243 100644
+index dd5078c5d11e602588606eb3715e3a7d6a4f5487..e8197ab87fec14f7dd9b8304da957d90833b4cfe 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
 @@ -1,5 +1,6 @@
@@ -271,7 +262,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
      private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
      private static final int MOB_FLAG_NO_AI = 1;
      private static final int MOB_FLAG_LEFTHANDED = 2;
-@@ -433,7 +434,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -450,7 +451,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
      @Override
      protected void addAdditionalSaveData(final ValueOutput output) {
          super.addAdditionalSaveData(output);
@@ -280,7 +271,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
          output.putBoolean("PersistenceRequired", this.persistenceRequired);
          if (!this.dropChances.equals(DropChances.DEFAULT)) {
              output.store("drop_chances", DropChances.CODEC, this.dropChances);
-@@ -543,7 +544,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -560,7 +561,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
          ProfilerFiller profiler = Profiler.get();
          profiler.push("looting");
          if (this.level() instanceof ServerLevel serverLevel
@@ -289,7 +280,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
              && this.isAlive()
              && !this.dead
              && serverLevel.getGameRules().get(GameRules.MOB_GRIEFING)) {
-@@ -551,7 +552,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -568,7 +569,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
  
              for (ItemEntity entity : this.level()
                  .getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(pickupReach.getX(), pickupReach.getY(), pickupReach.getZ()))) {
@@ -298,7 +289,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
                      // Paper start - Item#canEntityPickup
                      if (!entity.canMobPickup) {
                          continue;
-@@ -633,7 +634,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -650,7 +651,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
              canReplace = current.isEmpty();
          }
          // CraftBukkit start
@@ -307,7 +298,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
          if (entity != null) {
              canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, !canPickup).isCancelled();
          }
-@@ -763,7 +764,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -780,7 +781,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
      }
  
      public boolean wantsToPickUp(final ServerLevel level, final ItemStack itemStack) {
@@ -316,7 +307,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
      }
  
      public @Nullable TagKey<Item> getPreferredWeaponType() {
-@@ -795,7 +796,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -812,7 +813,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
                  final double dzSqr = Mth.square(player.getZ() - this.getZ());
                  final double distanceSquared = dxSqr + dzSqr + dySqr;
                  // Despawn if hard/soft limit is exceeded
@@ -325,7 +316,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
                      this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                  }
  
-@@ -803,7 +804,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -820,7 +821,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
                      if (!isPersistent
                          && this.noActionTime > 600
                          && this.random.nextInt(800) == 0
@@ -334,7 +325,7 @@ index 92ce15b22517bda5033e6377c76abaa6a9d68d03..1688b69ec1432bd3825e99dc9e1e195e
                          this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                      }
                  } else {
-@@ -1301,7 +1302,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -1318,7 +1319,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
  
      @Override
      protected boolean canDispenserEquipIntoSlot(final EquipmentSlot slot) {
@@ -408,7 +399,7 @@ index c661311dfdc1e21e3d6ec65e1e8b953637149675..93ec309eb0d767dff6f974f9d91b3cfa
      }
  }
 diff --git a/net/minecraft/world/entity/TamableAnimal.java b/net/minecraft/world/entity/TamableAnimal.java
-index 8881d76b5346baf5f14926696e93e07dc0889a24..5a59f546bb4c2fac59071dd50c9c235b7a21fbb4 100644
+index b4fb28dea2f2fc2bbb33e94495eb9b96c5eda4f5..1dfe1cd855b71bd06f8c9deaf86a732675185336 100644
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
 @@ -182,7 +182,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
@@ -633,7 +624,7 @@ index a051b6c69b76b4a5251a951bbc2028c6363d4881..941a109a2d98dc507c01c025a236f88f
          this.vibrationData = new VibrationSystem.Data();
          this.dynamicVibrationListener = new DynamicGameEventListener<>(new VibrationSystem.Listener(this));
 diff --git a/net/minecraft/world/entity/animal/bee/Bee.java b/net/minecraft/world/entity/animal/bee/Bee.java
-index fed07676ae1d7d8ce240e8ec8f0a2582ef45eea2..c3440752430f2cb089e304ae9421d0a80d12e864 100644
+index bea9673f36c4f1d43794b72c54060c4464074533..5ad3a086ff5ce40b3c216cee2d21872878ecf638 100644
 --- a/net/minecraft/world/entity/animal/bee/Bee.java
 +++ b/net/minecraft/world/entity/animal/bee/Bee.java
 @@ -589,7 +589,7 @@ public class Bee extends Animal implements NeutralMob {
@@ -925,7 +916,7 @@ index 1ab44f34b5d18d12259717444370f886b3a56144..fc92e9fa6200e85a538947f38cfbf341
                              this.nextHeadUpdate[i - 1] = this.tickCount + 40 + this.random.nextInt(20);
                              this.idleHeadUpdates[i - 1] = 0;
 diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
-index a1fa75b4a02187686f1bd18f409abd2e6cbe31be..f8cf2a3a7cf1502579db4c015c8e70f918c76524 100644
+index b9b35b714e26054e785594927b4a46d66db8cecb..bb675ebf06cb533771c81e5d0fb5ed6a0213a6a7 100644
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
 @@ -319,7 +319,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -1104,7 +1095,7 @@ index 6e4aa90e43b963a98f8f8d449283a1d4eb6fa7bb..cd554e84291e38d82e9c0c1e5b9e4630
              boolean hasSpace = inventory.canAddItem(itemStack);
              if (!hasSpace) {
 diff --git a/net/minecraft/world/entity/npc/villager/AbstractVillager.java b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
-index 5d742dcd507a1f47feb802ad5c2ce24a05d57bbf..23908e7fdd4d68a6eceab891f32d6e273dc7f563 100644
+index 2245b9d286ba1f0c160482d63d9094143c233baa..9c4d29f412ff1f7a60322277bb2d6a7e48ff1514 100644
 --- a/net/minecraft/world/entity/npc/villager/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/villager/AbstractVillager.java
 @@ -161,7 +161,7 @@ public abstract class AbstractVillager extends AgeableMob implements Npc, Mercha
@@ -1128,7 +1119,7 @@ index 5d742dcd507a1f47feb802ad5c2ce24a05d57bbf..23908e7fdd4d68a6eceab891f32d6e27
          }
      }
 diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
-index 4ba3fb85b0473b4e7aa237701034d25f84e955cd..395bc93df724f4a96b9a4311f6aa152d66c1d6cf 100644
+index 978d6f657f4ff84b773e5c320b3e08fce5ba168e..c85b19e12d5e68a06fce5c5b6767adf442ecbebc 100644
 --- a/net/minecraft/world/entity/player/Player.java
 +++ b/net/minecraft/world/entity/player/Player.java
 @@ -1096,7 +1096,7 @@ public abstract class Player extends Avatar implements ContainerUser {
@@ -1154,7 +1145,7 @@ index 654fdca39db9f559ad8fdce874e9d425441b4bf1..71fae059aa9e4baf23a85815df77c42e
  
      @Override
 diff --git a/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java b/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java
-index eb55301b0bcc91f73d8a92dead7d36c97ffb5d15..05e600fdf86fa69a1216cbcfdfdf283bf23615f2 100644
+index feb881e8df506f8933100656ee1331ca5e46d39f..f06b6d603bcdc5a8efc1cbcfbec20352c2817315 100644
 --- a/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/throwableitemprojectile/AbstractThrownPotion.java
 @@ -26,7 +26,7 @@ import net.minecraft.world.phys.HitResult;
@@ -1166,7 +1157,7 @@ index eb55301b0bcc91f73d8a92dead7d36c97ffb5d15..05e600fdf86fa69a1216cbcfdfdf283b
  
      public AbstractThrownPotion(final EntityType<? extends AbstractThrownPotion> type, final Level level) {
          super(type, level);
-@@ -123,7 +123,7 @@ public abstract class AbstractThrownPotion extends ThrowableItemProjectile {
+@@ -121,7 +121,7 @@ public abstract class AbstractThrownPotion extends ThrowableItemProjectile {
                  // Paper end - only compute entities once
                  double dist = this.distanceToSqr(entity);
                  if (dist < 16.0) {
@@ -1176,7 +1167,7 @@ index eb55301b0bcc91f73d8a92dead7d36c97ffb5d15..05e600fdf86fa69a1216cbcfdfdf283b
                      }
  
 diff --git a/net/minecraft/world/entity/raid/Raider.java b/net/minecraft/world/entity/raid/Raider.java
-index 9d242f24c37fec196f06b8ef6fa29a66b2781c68..f847c5a1b0c50b44bf3c1b5bd7dcc686eb55dbb8 100644
+index 7e969cd81d2ac788515f4d9ad7584ade4c684a42..8152275424641f436d3d69d3b4d26ac33f5165e9 100644
 --- a/net/minecraft/world/entity/raid/Raider.java
 +++ b/net/minecraft/world/entity/raid/Raider.java
 @@ -239,7 +239,7 @@ public abstract class Raider extends PatrollingMonster {
@@ -1189,10 +1180,10 @@ index 9d242f24c37fec196f06b8ef6fa29a66b2781c68..f847c5a1b0c50b44bf3c1b5bd7dcc686
  
      @Override
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index cc938f43c4a5e947ed87ca2001cbaca4084bf64c..9ac40862b8d3986eac1bfcae937f91d22feaedab 100644
+index f3f26db1c7fe6879dedeee470f25a226b32299ef..3ad56b2f22a14d81a7864b9b3a041a7a80babac3 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
-@@ -103,7 +103,7 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
+@@ -109,7 +109,7 @@ public interface EntityGetter extends ca.spottedleaf.moonrise.patches.chunk_syst
                  continue;
              }
  
@@ -1202,7 +1193,7 @@ index cc938f43c4a5e947ed87ca2001cbaca4084bf64c..9ac40862b8d3986eac1bfcae937f91d2
              }
          }
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index 06c63a3429d010546c8b9de610cbae7bf6bb6935..3e2dfa8c90221b344b335311f14f40a73e5e40e2 100644
+index c9217d494c7cafd455c2bb75de1c31f4067be05b..9e1c6c4c3411edac45a9f78c4ba3b717a4508baa 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
 @@ -424,7 +424,7 @@ public final class NaturalSpawner {
@@ -1215,10 +1206,10 @@ index 06c63a3429d010546c8b9de610cbae7bf6bb6935..3e2dfa8c90221b344b335311f14f40a7
              && mob.checkSpawnRules(level, EntitySpawnReason.NATURAL)
              && mob.checkSpawnObstruction(level);
 diff --git a/net/minecraft/world/level/block/BaseFireBlock.java b/net/minecraft/world/level/block/BaseFireBlock.java
-index 580fac7e521e635fa1177652a2e6a287585589d2..019f7a6674375a41a890329ef3c580191dc2ea81 100644
+index d90d1ab4ef150bd4e493246a4f97cab75de59b11..86bcc969eceb305101d5902e8c40b1a679ffca03 100644
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/net/minecraft/world/level/block/BaseFireBlock.java
-@@ -140,7 +140,7 @@ public abstract class BaseFireBlock extends Block {
+@@ -141,7 +141,7 @@ public abstract class BaseFireBlock extends Block {
      }
  
      public static void fireIgnite(final Entity entity, BlockPos pos) { // Paper - track position inside effect was triggered on

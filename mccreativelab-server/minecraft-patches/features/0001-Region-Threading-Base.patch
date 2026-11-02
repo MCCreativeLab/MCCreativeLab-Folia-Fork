@@ -830,7 +830,7 @@ index 130fc0ea8326ab406910b5429acd99ea91708db2..f1952fbdf9cadef9095b5de8777c466f
      public boolean halt(final boolean sync, final long maxWaitNS) {
          this.parallelGenExecutor.halt();
 diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
-index 7a0006f9b56d1e43b06f9f7452e1b5bb0ec53e72..c078a3f9dfa7cc053ef7ca26a238debe1c66cd6a 100644
+index 810edda14ef9f9092104a770a269e6caae785b02..fa8a2540b25c6d85d2db766729d8be04ccf113cc 100644
 --- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 +++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 @@ -1350,7 +1350,7 @@ public final class NewChunkHolder {
@@ -19472,10 +19472,10 @@ index 76dae652c910e36c860791a8285bd9fee466d5b9..8ffb2ed8a02c306a8510c4ce390b371b
          public void tick() {
              this.ticker.tick();
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 84a92dc868e61969460dddb156af332e6384bcd1..f40a1d56d7c5e47d20bce5fe7ea0e29a1afeadec 100644
+index 56a2412798bd4873070abc01343d81a1a3e55576..dff09d21fbfc9ca6be53e807987e4b1ec100b1e3 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-@@ -490,7 +490,7 @@ public record SerializableChunkData(
+@@ -491,7 +491,7 @@ public record SerializableChunkData(
              heightmaps.put(entry.getKey(), (long[])data.clone());
          }
  

@@ -5,7 +5,7 @@ Subject: [PATCH] Add BlockBehavior
 
 
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index f03cda0c0c3e5be45cc0875538fae3952ad56d37..a207a2e5e671c5ebd60cee98d1cd2d0350b07aff 100644
+index 762822ce2ccf98952dc92be4824c48fe6bc1bacb..1ef5aa08a637d282987d02944aff675db8342bc8 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -296,6 +296,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -17,78 +17,47 @@ index f03cda0c0c3e5be45cc0875538fae3952ad56d37..a207a2e5e671c5ebd60cee98d1cd2d03
  
          // Paper start - Add Velocity IP Forwarding Support
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a3519818f 100644
+index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3ec9750d4f 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -809,7 +809,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         boolean runs = tickRateManager.runsNormally();
-         if (runs) {
-             profiler.push("world border");
--            this.getWorldBorder().tick();
-+            this.getWorldBorder().mcc$tick();
-             profiler.popPush("weather");
-             this.advanceWeatherCycle();
-             profiler.pop();
-@@ -851,19 +851,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         if (!this.isDebug() && runs) {
-             long tick = this.getGameTime();
-             profiler.push("blockTicks");
--            this.blockTicks.tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
-+            this.blockTicks.mcc$tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
-             profiler.popPush("fluidTicks");
--            this.fluidTicks.tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
-+            this.fluidTicks.mcc$tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
-             profiler.pop();
-         }
- 
-         profiler.popPush("raid");
-         if (runs) {
--            this.raids.tick(this);
-+            this.raids.mcc$tick(this);
-         }
- 
-         profiler.popPush("chunkSource");
--        this.getChunkSource().tick(haveTime, true);
-+        this.getChunkSource().mcc$tick(haveTime, true);
-         profiler.popPush("blockEvents");
-         if (runs) {
-             this.runBlockEvents();
-@@ -884,7 +884,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             profiler.push("entities");
-             if (this.dragonFight != null && runs) {
-                 profiler.push("dragonFight");
--                this.dragonFight.tick();
-+                this.dragonFight.mcc$tick();
-                 profiler.pop();
+@@ -841,7 +841,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             for (WorldBorder worldBorder : worldBorders) {
+                 worldBorder.tick();
              }
- 
-@@ -934,7 +934,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             this.neighborUpdater.setDebugListener(null);
+-            // Folia end - regionised ticking
++            // Folia end - regionised tickingr
+             profiler.popPush("weather");
+             //this.advanceWeatherCycle(); // Folia - regionised ticking
+             profiler.pop();
+@@ -1002,6 +1002,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                 this.resetWeatherCycle();
+             }
          }
- 
--        this.debugSynchronizers.tick(this.server.debugSubscribers());
-+        this.debugSynchronizers.mcc$tick(this.server.debugSubscribers());
-         profiler.pop();
-         this.chunkSource.randomState().garbageCollect();
++r
      }
-@@ -952,14 +952,14 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             long time = this.levelData.getGameTime() + 1L;
-             this.serverLevelData.setGameTime(time);
+     // Folia end - region threading
+ 
+@@ -1019,7 +1020,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             long time = regionizedWorldData.getRedstoneGameTime() + 1L; // Folia - region threading
+             regionizedWorldData.setRedstoneGameTime(time); // Folia - region threading
              Profiler.get().push("scheduledFunctions");
--            this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents
-+            this.scheduledEvents.mcc$tick(this.server, time); // Paper - per-level scheduledEvents
+-            //this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents // Folia - region threading - TODO any way to bring this in?
++            //this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents // Folia - region threading - TODO any way to bring this in?r
              Profiler.get().pop();
          }
      }
- 
-     public void tickCustomSpawners(final boolean spawnEnemies) {
+@@ -1028,8 +1029,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
          for (CustomSpawner spawner : this.customSpawners) {
+             final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
 -            spawner.tick(this, spawnEnemies);
+-            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profiler
 +            spawner.mcc$tick(this, spawnEnemies);
++            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profilerr
          }
      }
  
-@@ -1006,11 +1006,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1087,11 +1088,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  // do not use a mutable pos, as some random tick implementations store the input without calling immutable()!
                  final BlockPos pos = new BlockPos((location & 15) | offsetX, ((location >>> (4 + 4)) & 15) | offsetY, ((location >>> 4) & 15) | offsetZ);
  
@@ -102,7 +71,7 @@ index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a
                      }
                  }
              }
-@@ -1108,7 +1108,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1189,7 +1190,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              Biome.Precipitation precipitation = biome.getPrecipitationAt(belowPos, this.getSeaLevel());
              if (precipitation != Biome.Precipitation.NONE) {
                  BlockState belowState = this.getBlockState(belowPos);
@@ -111,7 +80,7 @@ index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a
              }
          }
      }
-@@ -1359,7 +1359,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1449,7 +1450,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          BlockState blockState = this.getBlockState(pos);
          FluidState fluidState = blockState.getFluidState();
          if (fluidState.is(type)) {
@@ -120,7 +89,7 @@ index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1372,7 +1372,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1462,7 +1463,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
      private void tickBlock(final BlockPos pos, final Block type) {
          BlockState state = this.getBlockState(pos);
          if (state.is(type)) {
@@ -129,17 +98,27 @@ index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1408,7 +1408,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         entity.commonTick();
-         final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
+@@ -1499,7 +1500,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         try {
+         // Folia end - profiler
          if (isActive) { // Paper - EAR 2
 -        entity.tick();
 +        entity.mcc$tick();
-         entity.postTick(); // CraftBukkit
++        entity.postTick(); // CraftBukkit
+         // Folia start - region threading
+         if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(entity)) {
+             // removed from region while ticking
+@@ -1509,7 +1511,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             // portalled
+             return;
+         }
+-        // Folia end - region threading
++        // Folia end - region threadingr
          } else {entity.inactiveTick();} // Paper - EAR 2
          profiler.pop();
+         } finally { foliaProfiler.stopTimer(timerId); } // Folia - profiler
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index 81487e9840845de76f58e83cc57b173b5945bab4..00e92e54129932d1928469b3a84e1b93d8d8202e 100644
+index 1538081254ad649c45b6a731e88d41cbb6dcb902..21a499ea62ca4a65ec9b13e20b2b3f63535d6847 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -260,7 +260,7 @@ public class ServerPlayerGameMode {
@@ -152,10 +131,10 @@ index 81487e9840845de76f58e83cc57b173b5945bab4..00e92e54129932d1928469b3a84e1b93
                  }
  
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index e6a5d6a18e0d1af3be90f658f8a88f55c99d79e9..c7aaf72358adb233f9238b0e4a07f0cec0bd2585 100644
+index da04681491d07eaf410ec63e355cad0dc3cbc2f3..f6f772ee74525402cf036865d3e0ab683089907e 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -1470,7 +1470,7 @@ public abstract class Entity
+@@ -1487,7 +1487,7 @@ public abstract class Entity
              if (this.onGround()) {
                  BlockPos effectPos = this.getOnPosLegacy();
                  BlockState effectState = this.level().getBlockState(effectPos);
@@ -164,7 +143,7 @@ index e6a5d6a18e0d1af3be90f658f8a88f55c99d79e9..c7aaf72358adb233f9238b0e4a07f0ce
              }
  
              boolean wasOnFire = this.isOnFire();
-@@ -2123,7 +2123,7 @@ public abstract class Entity
+@@ -2145,7 +2145,7 @@ public abstract class Entity
  
          if (onGround) {
              if (this.fallDistance > 0.0) {
@@ -195,7 +174,7 @@ index f852126b179dc0c5dab3dbd22d3bfb8b73a5dba8..47edb3d077d4c92fd5cc87533cc187b9
                  this.level().removeBlock(pos, false);
              }
 diff --git a/net/minecraft/world/entity/item/FallingBlockEntity.java b/net/minecraft/world/entity/item/FallingBlockEntity.java
-index d32af0f840e76004b637f84e91270382ded5287a..a28448bfa6cd1566e7dfd8ee1377cb08c4ee9df7 100644
+index 97d137339aa6995b9c1044e5e072d278e0caf3fc..eb73e7003015cc51adc7d315f59ecb5b8dc31c71 100644
 --- a/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
 @@ -203,7 +203,7 @@ public class FallingBlockEntity extends Entity {
@@ -208,10 +187,10 @@ index d32af0f840e76004b637f84e91270382ded5287a..a28448bfa6cd1566e7dfd8ee1377cb08
                                  if (this.blockState.hasProperty(BlockStateProperties.WATERLOGGED) && this.level().getFluidState(pos).is(Fluids.WATER)) {
                                      this.blockState = this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
 diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
-index 089dd82e6806f4f1fbff554058dc44f15593e37f..b693d4ae75c32e9dfc5b37cccc514dcac9725d32 100644
+index a0e2e0f2f4258cf8c714b33df5b1d3dd758215a5..7a9198e4dd363bdda23e2a4f5939714591a0186d 100644
 --- a/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/net/minecraft/world/entity/projectile/Projectile.java
-@@ -457,7 +457,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -468,7 +468,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
          }
          // CraftBukkit end
          BlockState state = this.level().getBlockState(hitResult.getBlockPos());
@@ -221,7 +200,7 @@ index 089dd82e6806f4f1fbff554058dc44f15593e37f..b693d4ae75c32e9dfc5b37cccc514dca
  
      // Paper start
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 09c51f1c935ab0143afaeb7d59c973a15f68283c..4a22cb4a651ab88ac7be1fbee7389b5c9be36e8c 100644
+index 06601c7091fafb47ca0b0be0125db1c8adfebea9..d3bface55707d790dbbaa3440c34b059d0f22e8b 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
 @@ -477,7 +477,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
@@ -234,7 +213,7 @@ index 09c51f1c935ab0143afaeb7d59c973a15f68283c..4a22cb4a651ab88ac7be1fbee7389b5c
  
                          level.notifyAndUpdatePhysics(newPos, null, oldBlock, block, level.getBlockState(newPos), snapshot.getFlags(), net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
 diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
-index a2893f4298af62177fc3621603d465e24fe1e2eb..41e9bc968f0cbd4209190323c75f85e843b6f486 100644
+index 79eb05b5f7ac2388eaa41c31239cf4594ce37b53..b1a2646d10f4cc46cf43079c72b00c16df04e3db 100644
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
 @@ -541,7 +541,7 @@ public class ServerExplosion implements Explosion {
@@ -256,7 +235,7 @@ index a2893f4298af62177fc3621603d465e24fe1e2eb..41e9bc968f0cbd4209190323c75f85e8
  
          for (ServerExplosion.StackCollector stack : stacks) {
 diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
-index 97dd4a78afbb29177716ecbe3963f6c2d148b902..44a05e98b76b2967c1c961d7422999f44dbb667d 100644
+index c0aab7a11ef6d95aa053ad0002c17f4cc502a651..7f3a78a3925290d1ed496319de8bcaebca0b578d 100644
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
 @@ -410,7 +410,7 @@ public class Block extends BlockBehaviour implements ItemLike {
@@ -285,11 +264,18 @@ index 97dd4a78afbb29177716ecbe3963f6c2d148b902..44a05e98b76b2967c1c961d7422999f4
          }
      }
  
-@@ -453,7 +453,7 @@ public class Block extends BlockBehaviour implements ItemLike {
-             }
-             level.mccWorldHook.onBlockDrawLoot(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), breaker == null ? null : breaker.getBukkitEntity(), tool.asBukkitMirror(), dropExperience, loot);
-             loot.stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).forEach(stack -> popResource(level, pos, stack));
+@@ -447,8 +447,13 @@ public class Block extends BlockBehaviour implements ItemLike {
+         , final boolean dropExperience // Paper - Properly handle xp dropping
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+-            getDrops(state, serverLevel, pos, blockEntity, breaker, tool).forEach(stack -> popResource(level, pos, stack));
 -            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
++            List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>();
++            for (ItemStack drop : getDrops(state, serverLevel, pos, blockEntity, breaker, tool)) {
++                loot.add(drop.asBukkitCopy());
++            }
++            level.mccWorldHook.onBlockDrawLoot(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), breaker == null ? null : breaker.getBukkitEntity(), tool.asBukkitMirror(), dropExperience, loot);
++            loot.stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).forEach(stack -> popResource(level, pos, stack));
 +            state.mcc$spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
          }
      }
@@ -327,7 +313,7 @@ index 45596c309bd6200794fb578e937e2331b7c30a16..75f36e47aa16e74735e31db96bcd5abc
      }
  
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 44fcc919a2de54c3ceb0fd0875aadaea083fabad..ca6c38c18fbc5656d98dcef6b3d53b4e4f5cf42b 100644
+index c0394ba678970e8db28a9948b3f86f84307e4d35..f0d71324022fb9d581ee66032eda105e4a2d1021 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -190,12 +190,12 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -354,7 +340,7 @@ index 44fcc919a2de54c3ceb0fd0875aadaea083fabad..ca6c38c18fbc5656d98dcef6b3d53b4e
          private static final Direction[] DIRECTIONS = Direction.values();
          private static final VoxelShape[] EMPTY_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.empty()));
          private static final VoxelShape[] FULL_BLOCK_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.block()));
-@@ -974,7 +974,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -978,7 +978,7 @@ public abstract class BlockBehaviour implements FeatureElement {
          }
  
          public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
@@ -363,7 +349,7 @@ index 44fcc919a2de54c3ceb0fd0875aadaea083fabad..ca6c38c18fbc5656d98dcef6b3d53b4e
              if (dropExperience) this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, tool, true)); // Paper - Properly handle xp dropping
          }
  
-@@ -1040,7 +1040,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -1055,7 +1055,7 @@ public abstract class BlockBehaviour implements FeatureElement {
              return this.replaceable;
          }
  
@@ -373,10 +359,10 @@ index 44fcc919a2de54c3ceb0fd0875aadaea083fabad..ca6c38c18fbc5656d98dcef6b3d53b4e
          }
  
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 76dae652c910e36c860791a8285bd9fee466d5b9..002ed86631f88932d1702a7b688edd60788dce49 100644
+index b5508c0488ba395ad9eb03baeee01922e2ec3364..d5204db441f398f952c28f435d4990ed62bd854d 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -157,6 +157,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+@@ -164,6 +164,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
      ) {
          super(pos, upgradeData, level, PalettedContainerFactory.create(net.minecraft.server.MinecraftServer.getServer().registryAccess()), inhabitedTime, sections, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
          this.level = (ServerLevel) level; // CraftBukkit - type
@@ -386,7 +372,7 @@ index 76dae652c910e36c860791a8285bd9fee466d5b9..002ed86631f88932d1702a7b688edd60
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types type : Heightmap.Types.values()) {
-@@ -421,7 +424,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+@@ -425,7 +428,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
          if ((blockChanged || newBlock instanceof BaseRailBlock)
              && this.level instanceof ServerLevel serverLevel
              && ((flags & Block.UPDATE_NEIGHBORS) != 0 || movedByPiston)) {
@@ -395,10 +381,10 @@ index 76dae652c910e36c860791a8285bd9fee466d5b9..002ed86631f88932d1702a7b688edd60
          }
  
          if (!section.getBlockState(localX, localY, localZ).is(newBlock)) {
-@@ -429,7 +432,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+@@ -433,7 +436,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
          }
  
-         if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+         if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.getCurrentWorldData().captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled. // Folia - region threading
 -            state.onPlace(this.level, pos, oldState, movedByPiston);
 +            state.mcc$onPlace(this.level, pos, oldState, movedByPiston);
          }
