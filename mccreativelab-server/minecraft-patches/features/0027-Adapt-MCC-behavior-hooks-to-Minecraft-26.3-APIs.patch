@@ -5,10 +5,10 @@ Subject: [PATCH] Adapt MCC behavior hooks to Minecraft 26.3 APIs
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 68bf323979231a0a9cf1acafbbaa463ccf236ef0..eff12c88b0bfd5889a7021328abba2a97cfea4f8 100644
+index d7899a555d881e91d625eae2cfa6ab96c025f571..2b845fb891ecc9b49d23a08a4d6222f61af695a5 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -2072,6 +2072,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2206,6 +2206,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return Map.of();
      }
  
@@ -33,10 +33,10 @@ index d76aac8ddfc4198681adf293f5a8753d470b76e5..53d3a1c442b5cadd03ddf6e6c52eb42e
              .xmap(PlayerAdvancements.Data::new, PlayerAdvancements.Data::map);
  
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index a207a2e5e671c5ebd60cee98d1cd2d0350b07aff..fe68f8f42765038cd1b6371b7456d63aed9a1d04 100644
+index 7ac4450c6e3f0754303265fadb27b39bf91603a6..d6d6af955e2568a2838a516b14007e6e3e9f70d9 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -971,7 +971,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -983,7 +983,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
      }
  
      @Override
@@ -46,78 +46,52 @@ index a207a2e5e671c5ebd60cee98d1cd2d0350b07aff..fe68f8f42765038cd1b6371b7456d63a
      }
  
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index bde8af3f9d23a2f83401de4d4a9eaa0a3519818f..b98172b0d0fe08adb8d8f342adc6fdc336be7c05 100644
+index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d35b97564 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -809,7 +809,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         boolean runs = tickRateManager.runsNormally();
-         if (runs) {
-             profiler.push("world border");
--            this.getWorldBorder().mcc$tick();
-+            this.getWorldBorder().tick();
-             profiler.popPush("weather");
-             this.advanceWeatherCycle();
-             profiler.pop();
-@@ -851,19 +851,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         if (!this.isDebug() && runs) {
-             long tick = this.getGameTime();
-             profiler.push("blockTicks");
--            this.blockTicks.mcc$tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
-+            this.blockTicks.tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
-             profiler.popPush("fluidTicks");
--            this.fluidTicks.mcc$tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
-+            this.fluidTicks.tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
-             profiler.pop();
-         }
- 
-         profiler.popPush("raid");
-         if (runs) {
--            this.raids.mcc$tick(this);
-+            this.raids.tick(this);
-         }
- 
-         profiler.popPush("chunkSource");
--        this.getChunkSource().mcc$tick(haveTime, true);
-+        this.getChunkSource().tick(haveTime, true);
-         profiler.popPush("blockEvents");
-         if (runs) {
-             this.runBlockEvents();
-@@ -884,7 +884,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             profiler.push("entities");
-             if (this.dragonFight != null && runs) {
-                 profiler.push("dragonFight");
--                this.dragonFight.mcc$tick();
-+                this.dragonFight.tick();
-                 profiler.pop();
+@@ -841,8 +841,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             for (WorldBorder worldBorder : worldBorders) {
+                 worldBorder.tick();
              }
- 
-@@ -934,7 +934,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             this.neighborUpdater.setDebugListener(null);
+-            // Folia end - regionised tickingr
+-            profiler.popPush("weather");
++            // Folia end - regionised ticking            profiler.popPush("weather");
+             //this.advanceWeatherCycle(); // Folia - regionised ticking
+             profiler.pop();
          }
+@@ -1002,8 +1001,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                 this.resetWeatherCycle();
+             }
+         }
+-r
+-    }
++r    }
+     // Folia end - region threading
  
--        this.debugSynchronizers.mcc$tick(this.server.debugSubscribers());
-+        this.debugSynchronizers.tick(this.server.debugSubscribers());
-         profiler.pop();
-         this.chunkSource.randomState().garbageCollect();
-     }
-@@ -952,14 +952,14 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-             long time = this.levelData.getGameTime() + 1L;
-             this.serverLevelData.setGameTime(time);
+     @Override
+@@ -1020,8 +1018,7 @@ r
+             long time = regionizedWorldData.getRedstoneGameTime() + 1L; // Folia - region threading
+             regionizedWorldData.setRedstoneGameTime(time); // Folia - region threading
              Profiler.get().push("scheduledFunctions");
--            this.scheduledEvents.mcc$tick(this.server, time); // Paper - per-level scheduledEvents
-+            this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents
-             Profiler.get().pop();
+-            //this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents // Folia - region threading - TODO any way to bring this in?r
+-            Profiler.get().pop();
++            //this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents // Folia - region threading - TODO any way to bring this in?            Profiler.get().pop();
          }
      }
  
-     public void tickCustomSpawners(final boolean spawnEnemies) {
+@@ -1029,9 +1026,8 @@ r
+         final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
          for (CustomSpawner spawner : this.customSpawners) {
+             final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
 -            spawner.mcc$tick(this, spawnEnemies);
+-            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profilerr
+-        }
 +            spawner.tick(this, spawnEnemies);
-         }
++            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profilerr        }
      }
  
-@@ -1010,7 +1010,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private void wakeUpAllPlayers() {
+@@ -1092,7 +1088,7 @@ r
                  if (doubleTickFluids) {
                      final FluidState fluidState = state.getFluidState();
                      if (fluidState.isRandomlyTicking()) {
@@ -126,7 +100,7 @@ index bde8af3f9d23a2f83401de4d4a9eaa0a3519818f..b98172b0d0fe08adb8d8f342adc6fdc3
                      }
                  }
              }
-@@ -1359,7 +1359,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1450,7 +1446,7 @@ r
          BlockState blockState = this.getBlockState(pos);
          FluidState fluidState = blockState.getFluidState();
          if (fluidState.is(type)) {
@@ -135,20 +109,20 @@ index bde8af3f9d23a2f83401de4d4a9eaa0a3519818f..b98172b0d0fe08adb8d8f342adc6fdc3
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1408,7 +1408,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
-         entity.commonTick();
-         final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
+@@ -1500,7 +1496,7 @@ r
+         try {
+         // Folia end - profiler
          if (isActive) { // Paper - EAR 2
 -        entity.mcc$tick();
 +        entity.tick();
          entity.postTick(); // CraftBukkit
-         } else {entity.inactiveTick();} // Paper - EAR 2
-         profiler.pop();
+         // Folia start - region threading
+         if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(entity)) {
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index c7aaf72358adb233f9238b0e4a07f0cec0bd2585..b1c0369a1a1046673c1d0605464aede1e252117f 100644
+index f6f772ee74525402cf036865d3e0ab683089907e..f1fc03560bfcfa104e9f5d4713ddefffa135eb65 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -2139,7 +2139,7 @@ public abstract class Entity
+@@ -2161,7 +2161,7 @@ public abstract class Entity
      }
  
      public boolean fireImmune() {
@@ -171,10 +145,10 @@ index 61423c767452581d8f65657bfcd7e3fdf87126b2..d328b7de5b18e97429dde819178657db
  
      default double leashDistanceTo(final Entity entity) {
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 371830b3033f839e0222a1bb47277c9dd73d3cdd..076a723ace9edd53618cab2a9e5ae6c3dbd2bca7 100644
+index 85981cfb138f857c1cb42bfe1c91b89d39a5ebf2..f1f29cfead713f099a787d8a1d2effdd91c53c25 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -5037,4 +5037,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -5065,4 +5065,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              return this.currentSwing != null;
          }
      }
@@ -183,10 +157,10 @@ index 371830b3033f839e0222a1bb47277c9dd73d3cdd..076a723ace9edd53618cab2a9e5ae6c3
 +    }
  }
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 1688b69ec1432bd3825e99dc9e1e195e4d7d1243..6d61899ae50653ba13c7059ed263ef6f34ededae 100644
+index e8197ab87fec14f7dd9b8304da957d90833b4cfe..1aaa71fd88d8289fa857b57a2bfeab2076fd88e9 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -781,7 +781,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+@@ -798,7 +798,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
  
      @Override
      public void checkDespawn() {
@@ -209,10 +183,10 @@ index 200d39e6c8315cc6894d62cf689275098e6fe15d..81946efb1de69c215652478d84f40784
          }
  
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 4a22cb4a651ab88ac7be1fbee7389b5c9be36e8c..4481789e4745c01094c4cdded285147c226ee09a 100644
+index 24cc722a366d93208c815617ca1a97e9de5552bd..33e8953948766cd37f8354d9bb159e2f1adbe6da 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -508,12 +508,6 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -509,12 +509,6 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
                      }
  
                      player.awardStat(Stats.ITEM_USED.get(usedItem));
@@ -225,7 +199,7 @@ index 4a22cb4a651ab88ac7be1fbee7389b5c9be36e8c..4481789e4745c01094c4cdded285147c
                      ItemStack transformTo = success.heldItemTransformedTo() == null ? this : success.heldItemTransformedTo();
                      ItemStack resultItemStack = transformTo.applyAfterUseComponentSideEffects(player, stackBeforeUse);
                      return success.heldItemTransformedTo(resultItemStack);
-@@ -1381,9 +1375,20 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -1382,9 +1376,20 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
              .or(() -> Optional.ofNullable(this.getItem().getItemDamageSource(attacker)))
              .orElseGet(attacker::createDamageSource);
      }
@@ -261,7 +235,7 @@ index 46ba464f9a5b93f600cfa0f889ef8fb43cc817a4..56e29a0d00d7955470676abd81556012
                  // Paper start - Add PlayerNameEntityEvent
                  io.papermc.paper.event.player.PlayerNameEntityEvent event = new io.papermc.paper.event.player.PlayerNameEntityEvent(((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity(), target.getBukkitEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(customName), true);
 diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
-index 41e9bc968f0cbd4209190323c75f85e843b6f486..28d29120b5208befee6168e0d2bb28792e661b8b 100644
+index b1a2646d10f4cc46cf43079c72b00c16df04e3db..2056dd149797d04bc90e4ed75189a68fbbb7ffa9 100644
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
 @@ -541,7 +541,7 @@ public class ServerExplosion implements Explosion {
@@ -274,10 +248,10 @@ index 41e9bc968f0cbd4209190323c75f85e843b6f486..28d29120b5208befee6168e0d2bb2879
                  }
              }
 diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
-index ca6c38c18fbc5656d98dcef6b3d53b4e4f5cf42b..dccf050a5156b8e2d8fafaec5e316beb19466952 100644
+index f0d71324022fb9d581ee66032eda105e4a2d1021..94824c11306e5734db99084048bedfc0b18e790a 100644
 --- a/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -974,7 +974,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -978,7 +978,7 @@ public abstract class BlockBehaviour implements FeatureElement {
          }
  
          public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {

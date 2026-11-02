@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Mon, 27 Jan 2025 15:20:46 +0000
+Subject: [PATCH] Add MCCWorldHook
+
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index d29af6feeda2a8347e2fa3de0df1a6bac5779a68..fc90922f8025a5104373d20d25583d69405a4807 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -152,6 +152,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
+     // Folia - region threading - moved to regionised data
+     // Folia - region threading
++    public de.verdox.mccreativelab.behavior.MCCWorldHook mccWorldHook = new de.verdox.mccreativelab.behavior.MCCWorldHook() {};
+     public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
+     // Paper start - add paper world config
+     private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
+@@ -1206,6 +1207,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+ 
+             if ((updateFlags & Block.UPDATE_SKIP_POI) == 0) // Paper - temporary flag
+             this.updatePOIOnBlockStateChange(pos, oldState, newState);
++            this.mccWorldHook.onBlockChange(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), oldState.asBlockData(), newState.asBlockData());
+         }
+     }
+     // CraftBukkit end

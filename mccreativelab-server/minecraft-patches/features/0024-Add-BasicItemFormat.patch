@@ -5,7 +5,7 @@ Subject: [PATCH] Add BasicItemFormat
 
 
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 00861318771cd184c9f75a9a036deee9ec2ba310..adb232a3fbfaa28d634c8a6fe7c15dfb7e0d7eb5 100644
+index d3bface55707d790dbbaa3440c34b059d0f22e8b..24cc722a366d93208c815617ca1a97e9de5552bd 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
 @@ -275,6 +275,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {

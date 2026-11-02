@@ -93,7 +93,7 @@ index e70701663abd6f19a506690167d80f0dceab8000..d76aac8ddfc4198681adf293f5a8753d
          this.progress.forEach((advancement, progress) -> {
              if (progress.hasProgress()) {
 diff --git a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index eea7dd596eb9ac75dee29d843d786493d44034f3..6e3262c8773f44349d07b41d70847ca4a02bd05c 100644
+index eae5096f5ce28aa4bbe1cde689cb6de93fe53038..f3c4b9c3544fc95416032a980058ed1862f7cf1e 100644
 --- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -1,5 +1,7 @@
@@ -104,7 +104,7 @@ index eea7dd596eb9ac75dee29d843d786493d44034f3..6e3262c8773f44349d07b41d70847ca4
  import com.google.common.primitives.Ints;
  import com.mojang.authlib.GameProfile;
  import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
-@@ -363,6 +365,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -369,6 +371,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
                  this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(asyncEvent.kickMessage())); // Paper - Adventure
              }
          }

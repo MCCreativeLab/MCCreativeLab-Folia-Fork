@@ -5,7 +5,7 @@ Subject: [PATCH] Add BlockBehavior
 
 
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 762822ce2ccf98952dc92be4824c48fe6bc1bacb..1ef5aa08a637d282987d02944aff675db8342bc8 100644
+index 451a1eafaeb1a0693cf530af8836c7fc27c16745..7ac4450c6e3f0754303265fadb27b39bf91603a6 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -296,6 +296,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface

@@ -10451,7 +10451,7 @@ index ab7e6422b8324b24c48d6a845195f94ea21d302c..5b998967b38800101d0b78ca5b6414c2
  
      private static String formatTicksToSeconds(final long ticks) {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 68675926ee85f738b3693a76fc29b80b80c717ed..762822ce2ccf98952dc92be4824c48fe6bc1bacb 100644
+index f03cda0c0c3e5be45cc0875538fae3952ad56d37..451a1eafaeb1a0693cf530af8836c7fc27c16745 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -400,8 +400,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -19720,7 +19720,7 @@ index aab588e934945c2cec0f7d90f0b2cc22b4e5eb8b..7b1fb75a3a8e038fcc005f7c72b3e7af
              org.bukkit.event.world.PortalCreateEvent portalEvent = new org.bukkit.event.world.PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) blockList.getSnapshotBlocks(), bworld, entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PLATFORM);
              newLevel.getLevel().getCraftServer().getPluginManager().callEvent(portalEvent);
 diff --git a/net/minecraft/world/level/levelgen/structure/StructureStart.java b/net/minecraft/world/level/levelgen/structure/StructureStart.java
-index ff9a61db79f8488612f77ceb92226d83cf3ba75e..aa97e5ca4716d92801c65f0091e0eb1cffb87bf5 100644
+index ca7976998ed5a3026159c3d46bc5ff10908c5837..5a2e6c2447baa2fc1b0db2b5decf88a464d14f54 100644
 --- a/net/minecraft/world/level/levelgen/structure/StructureStart.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructureStart.java
 @@ -26,7 +26,7 @@ public final class StructureStart {
