@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Sun, 2 Feb 2025 19:25:09 +0000
+Subject: [PATCH] Add BlockBehavior
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 0ab39922e53ebeb044958f99b7f0f06391d78d31..7e26311648225acf5aa8a32046736791d34317d3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -701,7 +701,7 @@ public class CraftBlock implements Block {
+     @Override
+     public void tick() {
+         final ServerLevel level = this.level.getMinecraftWorld();
+-        this.getBlockState().tick(level, this.position, level.getRandom());
++        this.getBlockState().mcc$tick(level, this.position, level.getRandom());
+     }
+ 
+     @Override
+@@ -712,6 +712,6 @@ public class CraftBlock implements Block {
+     @Override
+     public void randomTick() {
+         final ServerLevel level = this.level.getMinecraftWorld();
+-        this.getBlockState().randomTick(level, this.position, level.getRandom());
++        this.getBlockState().mcc$randomTick(level, this.position, level.getRandom());
+     }
+ }

@@ -1,0 +1,28 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+/run
+
+/mccreativelab-server/build.gradle.kts
+/mccreativelab-server/src/minecraft
+/paper-server
+/mccreativelab-api/build.gradle.kts
+/paper-api
+/paper-api-generator
+
+.idea/
+/patches_rework
+
+# Local repository credentials
+.env
+.env.*
+!.env.example
+
+# Generated from the pinned Paper upstream
+/paper-checkstyle
+/.checkstyle
+__pycache__/
+.kotlin/

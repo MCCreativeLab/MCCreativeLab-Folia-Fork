@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/levelgen/structure/StructureStart.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureStart.java
+@@ -106,7 +_,7 @@
+             if (!intersectingPieces.isEmpty()) {
+                 org.bukkit.craftbukkit.util.TransformerLevelAccessor transformerAccessor = new org.bukkit.craftbukkit.util.TransformerLevelAccessor();
+                 transformerAccessor.setDelegate(level);
+-                transformerAccessor.setStructureTransformer(new org.bukkit.craftbukkit.util.CraftStructureTransformer(this.generationEventCause, level, structureManager, this.structure, chunkBB, chunkPos));
++                transformerAccessor.setStructureTransformer(new org.bukkit.craftbukkit.util.CraftStructureTransformer(this, this.generationEventCause, level, structureManager, this.structure, chunkBB, chunkPos));
+                 for (StructurePiece piece : intersectingPieces) {
+                     piece.postProcess(transformerAccessor, structureManager, generator, random, chunkBB, chunkPos, referencePos);
+                 }

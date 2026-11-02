@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Mon, 27 Jan 2025 15:59:51 +0000
+Subject: [PATCH] Add WorldGenerationBehaviour
+
+
+diff --git a/net/minecraft/world/level/chunk/BulkSectionAccess.java b/net/minecraft/world/level/chunk/BulkSectionAccess.java
+index 84733ae2f3543089a675d82542e77123044de477..8283405000cc996efb0cf3956b13cb68a4abd223 100644
+--- a/net/minecraft/world/level/chunk/BulkSectionAccess.java
++++ b/net/minecraft/world/level/chunk/BulkSectionAccess.java
+@@ -57,4 +57,12 @@ public class BulkSectionAccess implements AutoCloseable {
+             section.release();
+         }
+     }
++    public @Nullable com.mojang.datafixers.util.Pair<LevelChunkSection, ChunkAccess> getSectionAndChunkAccess(final BlockPos pos) {
++        LevelChunkSection section = this.getSection(pos);
++        if (section == null) {
++            return null;
++        }
++        ChunkAccess chunk = this.level.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()));
++        return com.mojang.datafixers.util.Pair.of(section, chunk);
++    }
+ }
+diff --git a/net/minecraft/world/level/levelgen/feature/OreFeature.java b/net/minecraft/world/level/levelgen/feature/OreFeature.java
+index e6aee6a38f45b47413aa3bbddf3632bc0c6a93f5..6497754ed41abda242af85f33763454d6bb10a42 100644
+--- a/net/minecraft/world/level/levelgen/feature/OreFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/OreFeature.java
+@@ -145,7 +145,8 @@ public class OreFeature extends AbstractOreFeature {
+                                                 tested.set(bitSetIndex);
+                                                 orePos.set(x, y, z);
+                                                 if (level.ensureCanWrite(orePos)) {
+-                                                    LevelChunkSection section = sectionGetter.getSection(orePos);
++                                                    var sectionAndChunk = sectionGetter.getSectionAndChunkAccess(orePos);
++                                                    LevelChunkSection section = sectionAndChunk == null ? null : sectionAndChunk.getFirst();
+                                                     if (section != null) {
+                                                         int sectionRelativeX = SectionPos.sectionRelative(x);
+                                                         int sectionRelativeY = SectionPos.sectionRelative(y);
+@@ -157,6 +158,7 @@ public class OreFeature extends AbstractOreFeature {
+                                                                 section.setBlockState(
+                                                                     sectionRelativeX, sectionRelativeY, sectionRelativeZ, targetState.state(), false
+                                                                 );
++                                                                de.verdox.mccreativelab.worldgen.WorldGenerationCallbackUtil.executeWorldGenCallbacks(de.verdox.mccreativelab.behavior.WorldGenerationBehaviour.FeatureType.ORE_FEATURE, level, orePos.immutable(), targetState.state(), sectionAndChunk.getSecond());
+                                                                 placed++;
+                                                                 break;
+                                                             }
+diff --git a/net/minecraft/world/level/levelgen/feature/TreeFeature.java b/net/minecraft/world/level/levelgen/feature/TreeFeature.java
+index 92eaf1c49070276c5eeae37625440c6034489f19..57891e7b19f2f4f999924d60b888c19fa2c44454 100644
+--- a/net/minecraft/world/level/levelgen/feature/TreeFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/TreeFeature.java
+@@ -157,16 +157,19 @@ public record TreeFeature(
+         BiConsumer<BlockPos, BlockState> rootSetter = (pos, state) -> {
+             rootPositions.add(pos.immutable());
+             level.setBlock(pos, state, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
++            de.verdox.mccreativelab.worldgen.WorldGenerationCallbackUtil.executeWorldGenCallbacks(de.verdox.mccreativelab.behavior.WorldGenerationBehaviour.FeatureType.TREE_FEATURE, level, pos, state);
+         };
+         BiConsumer<BlockPos, BlockState> trunkSetter = (pos, state) -> {
+             trunks.add(pos.immutable());
+             level.setBlock(pos, state, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
++            de.verdox.mccreativelab.worldgen.WorldGenerationCallbackUtil.executeWorldGenCallbacks(de.verdox.mccreativelab.behavior.WorldGenerationBehaviour.FeatureType.TREE_FEATURE, level, pos, state);
+         };
+         FoliagePlacer.FoliageSetter foliageSetter = new FoliagePlacer.FoliageSetter() {
+             @Override
+             public void set(final BlockPos pos, final BlockState state) {
+                 foliage.add(pos.immutable());
+                 level.setBlock(pos, state, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
++            de.verdox.mccreativelab.worldgen.WorldGenerationCallbackUtil.executeWorldGenCallbacks(de.verdox.mccreativelab.behavior.WorldGenerationBehaviour.FeatureType.TREE_FEATURE, level, pos, state);
+             }
+ 
+             @Override
+@@ -177,6 +180,7 @@ public record TreeFeature(
+         BiConsumer<BlockPos, BlockState> decorationSetter = (pos, state) -> {
+             decorations.add(pos.immutable());
+             level.setBlock(pos, state, Block.UPDATE_ALL | Block.UPDATE_KNOWN_SHAPE);
++            de.verdox.mccreativelab.worldgen.WorldGenerationCallbackUtil.executeWorldGenCallbacks(de.verdox.mccreativelab.behavior.WorldGenerationBehaviour.FeatureType.TREE_FEATURE, level, pos, state);
+         };
+         boolean result = this.doPlace(level, random, origin, rootSetter, trunkSetter, foliageSetter);
+         if (result && (!trunks.isEmpty() || !foliage.isEmpty())) {

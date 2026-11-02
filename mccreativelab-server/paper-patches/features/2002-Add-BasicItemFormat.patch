@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Mon, 27 Jan 2025 15:42:09 +0000
+Subject: [PATCH] Add BasicItemFormat
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index d70fd987267deb9e19ef13b38221e89f0a9a8f88..ad4b750688eaeb73184b7b5916b4b22274cb6f09 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -192,6 +192,7 @@ public final class CraftItemStack extends ItemStack {
+         this.setAmount(amount);
+         this.setDurability(durability);
+         this.setItemMeta(itemMeta);
++        de.verdox.mccreativelab.BasicItemFormat.applyItemFormatAndReturn(this);
+     }
+ 
+     @Override
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+index 07ffea04850c0b7f593519727e8f42644a2dcb36..81a5382115ec7f3fc399c98d40df86ede6b37b92 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
+@@ -120,8 +120,8 @@ public class DeprecatedItemMetaCustomValueTest {
+         String configValue = configuration.saveToString();
+         YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(new StringReader(configValue));
+ 
+-        assertEquals(stack, loadedConfig.getSerializable("testpath", ItemStack.class));
+-        assertNotEquals(new ItemStack(Material.DIAMOND), loadedConfig.getSerializable("testpath", ItemStack.class));
++        assertEquals(stack, de.verdox.mccreativelab.BasicItemFormat.removeConversionTag(loadedConfig.getSerializable("testpath", ItemStack.class)));
++        assertNotEquals(new ItemStack(Material.DIAMOND), de.verdox.mccreativelab.BasicItemFormat.removeConversionTag(loadedConfig.getSerializable("testpath", ItemStack.class)));
+     }
+ 
+     @Test
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+index f56d5d2c72cebfbda3cac371e8161351f80bbc07..09b7123bda48290608d18d1614482658c47e92bd 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
+@@ -154,8 +154,8 @@ public class PersistentDataContainerTest {
+         String configValue = configuration.saveToString();
+         YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(new StringReader(configValue));
+ 
+-        assertEquals(stack, loadedConfig.getSerializable("testpath", ItemStack.class));
+-        assertNotEquals(new ItemStack(Material.DIAMOND), loadedConfig.getSerializable("testpath", ItemStack.class));
++        assertEquals(stack, de.verdox.mccreativelab.BasicItemFormat.removeConversionTag(loadedConfig.getSerializable("testpath", ItemStack.class)));
++        assertNotEquals(new ItemStack(Material.DIAMOND), de.verdox.mccreativelab.BasicItemFormat.removeConversionTag(loadedConfig.getSerializable("testpath", ItemStack.class)));
+     }
+ 
+     @Test

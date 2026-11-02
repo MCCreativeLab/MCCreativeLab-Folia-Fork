@@ -1,0 +1,534 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Sun, 2 Feb 2025 19:25:09 +0000
+Subject: [PATCH] Add BlockBehavior
+
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index f03cda0c0c3e5be45cc0875538fae3952ad56d37..a207a2e5e671c5ebd60cee98d1cd2d0350b07aff 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -296,6 +296,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // CraftBukkit start
+         this.server.loadPlugins();
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
++        net.minecraft.world.level.block.Blocks.rebuildCache();
+         // CraftBukkit end
+ 
+         // Paper start - Add Velocity IP Forwarding Support
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index ea4cc487002a0edc54cc49bfbecf72be156b6af7..bde8af3f9d23a2f83401de4d4a9eaa0a3519818f 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -809,7 +809,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         boolean runs = tickRateManager.runsNormally();
+         if (runs) {
+             profiler.push("world border");
+-            this.getWorldBorder().tick();
++            this.getWorldBorder().mcc$tick();
+             profiler.popPush("weather");
+             this.advanceWeatherCycle();
+             profiler.pop();
+@@ -851,19 +851,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         if (!this.isDebug() && runs) {
+             long tick = this.getGameTime();
+             profiler.push("blockTicks");
+-            this.blockTicks.tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
++            this.blockTicks.mcc$tick(tick, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
+             profiler.popPush("fluidTicks");
+-            this.fluidTicks.tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
++            this.fluidTicks.mcc$tick(tick, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
+             profiler.pop();
+         }
+ 
+         profiler.popPush("raid");
+         if (runs) {
+-            this.raids.tick(this);
++            this.raids.mcc$tick(this);
+         }
+ 
+         profiler.popPush("chunkSource");
+-        this.getChunkSource().tick(haveTime, true);
++        this.getChunkSource().mcc$tick(haveTime, true);
+         profiler.popPush("blockEvents");
+         if (runs) {
+             this.runBlockEvents();
+@@ -884,7 +884,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             profiler.push("entities");
+             if (this.dragonFight != null && runs) {
+                 profiler.push("dragonFight");
+-                this.dragonFight.tick();
++                this.dragonFight.mcc$tick();
+                 profiler.pop();
+             }
+ 
+@@ -934,7 +934,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             this.neighborUpdater.setDebugListener(null);
+         }
+ 
+-        this.debugSynchronizers.tick(this.server.debugSubscribers());
++        this.debugSynchronizers.mcc$tick(this.server.debugSubscribers());
+         profiler.pop();
+         this.chunkSource.randomState().garbageCollect();
+     }
+@@ -952,14 +952,14 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             long time = this.levelData.getGameTime() + 1L;
+             this.serverLevelData.setGameTime(time);
+             Profiler.get().push("scheduledFunctions");
+-            this.scheduledEvents.tick(this.server, time); // Paper - per-level scheduledEvents
++            this.scheduledEvents.mcc$tick(this.server, time); // Paper - per-level scheduledEvents
+             Profiler.get().pop();
+         }
+     }
+ 
+     public void tickCustomSpawners(final boolean spawnEnemies) {
+         for (CustomSpawner spawner : this.customSpawners) {
+-            spawner.tick(this, spawnEnemies);
++            spawner.mcc$tick(this, spawnEnemies);
+         }
+     }
+ 
+@@ -1006,11 +1006,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                 // do not use a mutable pos, as some random tick implementations store the input without calling immutable()!
+                 final BlockPos pos = new BlockPos((location & 15) | offsetX, ((location >>> (4 + 4)) & 15) | offsetY, ((location >>> 4) & 15) | offsetZ);
+ 
+-                state.randomTick((ServerLevel)(Object)this, pos, simpleRandom);
++                state.mcc$randomTick((ServerLevel)(Object)this, pos, simpleRandom);
+                 if (doubleTickFluids) {
+                     final FluidState fluidState = state.getFluidState();
+                     if (fluidState.isRandomlyTicking()) {
+-                        fluidState.randomTick((ServerLevel)(Object)this, pos, simpleRandom);
++                        fluidState.mcc$randomTick((ServerLevel)(Object)this, pos, simpleRandom);
+                     }
+                 }
+             }
+@@ -1108,7 +1108,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+             Biome.Precipitation precipitation = biome.getPrecipitationAt(belowPos, this.getSeaLevel());
+             if (precipitation != Biome.Precipitation.NONE) {
+                 BlockState belowState = this.getBlockState(belowPos);
+-                belowState.getBlock().handlePrecipitation(belowState, this, belowPos, precipitation);
++                belowState.mcc$handlePrecipitation(belowState, this, belowPos, precipitation);
+             }
+         }
+     }
+@@ -1359,7 +1359,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         BlockState blockState = this.getBlockState(pos);
+         FluidState fluidState = blockState.getFluidState();
+         if (fluidState.is(type)) {
+-            fluidState.tick(this, pos, blockState);
++            fluidState.mcc$tick(this, pos, blockState);
+         }
+         // Paper start - rewrite chunk system
+         if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
+@@ -1372,7 +1372,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     private void tickBlock(final BlockPos pos, final Block type) {
+         BlockState state = this.getBlockState(pos);
+         if (state.is(type)) {
+-            state.tick(this, pos, this.random);
++            state.mcc$tick(this, pos, this.random);
+         }
+         // Paper start - rewrite chunk system
+         if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
+@@ -1408,7 +1408,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         entity.commonTick();
+         final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
+         if (isActive) { // Paper - EAR 2
+-        entity.tick();
++        entity.mcc$tick();
+         entity.postTick(); // CraftBukkit
+         } else {entity.inactiveTick();} // Paper - EAR 2
+         profiler.pop();
+diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
+index 81487e9840845de76f58e83cc57b173b5945bab4..00e92e54129932d1928469b3a84e1b93d8d8202e 100644
+--- a/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -260,7 +260,7 @@ public class ServerPlayerGameMode {
+                         blockState,
+                         item -> this.player.onEquippedItemBroken(item, EquipmentSlot.MAINHAND)
+                     );
+-                    blockState.attack(this.level, pos, this.player);
++                    blockState.mcc$attack(this.level, pos, this.player);
+                     progress = blockState.getDestroyProgress(this.player, this.player.level(), pos);
+                 }
+ 
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index e6a5d6a18e0d1af3be90f658f8a88f55c99d79e9..c7aaf72358adb233f9238b0e4a07f0cec0bd2585 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -1470,7 +1470,7 @@ public abstract class Entity
+             if (this.onGround()) {
+                 BlockPos effectPos = this.getOnPosLegacy();
+                 BlockState effectState = this.level().getBlockState(effectPos);
+-                effectState.getBlock().stepOn(this.level(), effectPos, effectState, this);
++                effectState.mcc$stepOn(this.level(), effectPos, effectState, this);
+             }
+ 
+             boolean wasOnFire = this.isOnFire();
+@@ -2123,7 +2123,7 @@ public abstract class Entity
+ 
+         if (onGround) {
+             if (this.fallDistance > 0.0) {
+-                onState.getBlock().fallOn(this.level(), onState, pos, this, this.fallDistance);
++                onState.mcc$fallOn(this.level(), onState, pos, this, this.fallDistance);
+                 this.level()
+                     .gameEvent(
+                         GameEvent.HIT_GROUND,
+diff --git a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index f852126b179dc0c5dab3dbd22d3bfb8b73a5dba8..47edb3d077d4c92fd5cc87533cc187b9e4e38f82 100644
+--- a/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -509,14 +509,14 @@ public class EnderDragon extends Mob implements Enemy {
+                     state.getDrops(builder).forEach((item) -> {
+                         net.minecraft.world.level.block.Block.popResource(this.level(), pos, item);
+                     });
+-                    state.spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
++                    state.mcc$spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
+                 }
+                 // Paper start - TNTPrimeEvent
+                 org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), pos);
+                 if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
+                     continue;
+                 // Paper end - TNTPrimeEvent
+-                block.wasExploded((ServerLevel) this.level(), pos, this.explosionSource);
++                state.mcc$wasExploded((ServerLevel) this.level(), pos, this.explosionSource);
+ 
+                 this.level().removeBlock(pos, false);
+             }
+diff --git a/net/minecraft/world/entity/item/FallingBlockEntity.java b/net/minecraft/world/entity/item/FallingBlockEntity.java
+index d32af0f840e76004b637f84e91270382ded5287a..a28448bfa6cd1566e7dfd8ee1377cb08c4ee9df7 100644
+--- a/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -203,7 +203,7 @@ public class FallingBlockEntity extends Entity {
+                                 new DirectionalPlaceContext(this.level(), pos, Direction.DOWN, ItemStack.EMPTY, Direction.UP)
+                             );
+                             boolean wouldContinueFalling = FallingBlock.isFree(this.level().getBlockState(pos.below())) && (!isConcrete || !isStuckInWater);
+-                            boolean wouldSurvive = this.blockState.canSurvive(this.level(), pos) && !wouldContinueFalling;
++                            boolean wouldSurvive = this.blockState.mcc$canSurvive(this.level(), pos) && !wouldContinueFalling;
+                             if (mayReplace && wouldSurvive) {
+                                 if (this.blockState.hasProperty(BlockStateProperties.WATERLOGGED) && this.level().getFluidState(pos).is(Fluids.WATER)) {
+                                     this.blockState = this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
+diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
+index 089dd82e6806f4f1fbff554058dc44f15593e37f..b693d4ae75c32e9dfc5b37cccc514dcac9725d32 100644
+--- a/net/minecraft/world/entity/projectile/Projectile.java
++++ b/net/minecraft/world/entity/projectile/Projectile.java
+@@ -457,7 +457,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         }
+         // CraftBukkit end
+         BlockState state = this.level().getBlockState(hitResult.getBlockPos());
+-        state.onProjectileHit(this.level(), state, hitResult, this);
++        state.mcc$onProjectileHit(this.level(), state, hitResult, this);
+     }
+ 
+     // Paper start
+diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
+index 09c51f1c935ab0143afaeb7d59c973a15f68283c..4a22cb4a651ab88ac7be1fbee7389b5c9be36e8c 100644
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -477,7 +477,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+                         net.minecraft.world.level.block.state.BlockState block = level.getBlockState(newPos);
+ 
+                         if (!(block.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // Containers get placed automatically
+-                            block.onPlace(level, newPos, oldBlock, true, context);
++                            block.mcc$onPlace(level, newPos, oldBlock, true, context);
+                         }
+ 
+                         level.notifyAndUpdatePhysics(newPos, null, oldBlock, block, level.getBlockState(newPos), snapshot.getFlags(), net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
+diff --git a/net/minecraft/world/level/ServerExplosion.java b/net/minecraft/world/level/ServerExplosion.java
+index a2893f4298af62177fc3621603d465e24fe1e2eb..41e9bc968f0cbd4209190323c75f85e843b6f486 100644
+--- a/net/minecraft/world/level/ServerExplosion.java
++++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -541,7 +541,7 @@ public class ServerExplosion implements Explosion {
+                             this.hitPlayers.put(player, knockback);
+                         }
+ 
+-                        entity.onExplosionHit(this.source);
++                        entity.mcc$onExplosionHit(this.source);
+                     }
+                 }
+             }
+@@ -602,7 +602,7 @@ public class ServerExplosion implements Explosion {
+             }
+             // CraftBukkit end
+ 
+-            this.level.getBlockState(pos).onExplosionHit(this.level, pos, this, (stackx, position) -> addOrAppendStack(stacks, stackx, position));
++            this.level.getBlockState(pos).mcc$onExplosionHit(this.level, pos, this, (stackx, position) -> addOrAppendStack(stacks, stackx, position));
+         }
+ 
+         for (ServerExplosion.StackCollector stack : stacks) {
+diff --git a/net/minecraft/world/level/block/Block.java b/net/minecraft/world/level/block/Block.java
+index 97dd4a78afbb29177716ecbe3963f6c2d148b902..44a05e98b76b2967c1c961d7422999f44dbb667d 100644
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -410,7 +410,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+             for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
+                 popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
+             }
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            state.mcc$spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
+             block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
+         }
+         return true;
+@@ -420,14 +420,14 @@ public class Block extends BlockBehaviour implements ItemLike {
+     public static void dropResources(final BlockState state, final Level level, final BlockPos pos) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, null).forEach(stack -> popResource(level, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.mcc$spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
+         }
+     }
+ 
+     public static void dropResources(final BlockState state, final LevelAccessor level, final BlockPos pos, final @Nullable BlockEntity blockEntity) {
+         if (level instanceof ServerLevel serverLevel) {
+             getDrops(state, serverLevel, pos, blockEntity).forEach(stack -> popResource(serverLevel, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
++            state.mcc$spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
+         }
+     }
+ 
+@@ -453,7 +453,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+             }
+             level.mccWorldHook.onBlockDrawLoot(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), breaker == null ? null : breaker.getBukkitEntity(), tool.asBukkitMirror(), dropExperience, loot);
+             loot.stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).forEach(stack -> popResource(level, pos, stack));
+-            state.spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
++            state.mcc$spawnAfterBreak(serverLevel, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+         }
+     }
+ 
+diff --git a/net/minecraft/world/level/block/Blocks.java b/net/minecraft/world/level/block/Blocks.java
+index 71ff3e831bbe4c49e946664c7ca22634a4e9fecc..4a83123702b5bffda5e6e9256ddb9011495715dd 100644
+--- a/net/minecraft/world/level/block/Blocks.java
++++ b/net/minecraft/world/level/block/Blocks.java
+@@ -49,6 +49,14 @@ import net.minecraft.world.level.material.PushReaction;
+ import net.minecraft.world.phys.AABB;
+ 
+ public class Blocks {
++    public static void rebuildCache() {
++        for (Block block : BuiltInRegistries.BLOCK) {
++            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
++                state.initCache();
++            }
++        }
++    }
++
+     private static final BlockBehaviour.StatePredicate NOT_CLOSED_SHULKER = (state, level, pos) -> !(
+             level.getBlockEntity(pos) instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity
+         )
+diff --git a/net/minecraft/world/level/block/StemBlock.java b/net/minecraft/world/level/block/StemBlock.java
+index 45596c309bd6200794fb578e937e2331b7c30a16..75f36e47aa16e74735e31db96bcd5abcafbb0c7e 100644
+--- a/net/minecraft/world/level/block/StemBlock.java
++++ b/net/minecraft/world/level/block/StemBlock.java
+@@ -113,7 +113,7 @@ public class StemBlock extends VegetationBlock implements BonemealableBlock {
+         BlockState newState = state.setValue(AGE, age);
+         org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, newState, Block.UPDATE_CLIENTS); // CraftBukkit
+         if (age == 7) {
+-            newState.randomTick(level, pos, random);
++            newState.mcc$randomTick(level, pos, random);
+         }
+     }
+ 
+diff --git a/net/minecraft/world/level/block/state/BlockBehaviour.java b/net/minecraft/world/level/block/state/BlockBehaviour.java
+index 44fcc919a2de54c3ceb0fd0875aadaea083fabad..ca6c38c18fbc5656d98dcef6b3d53b4e4f5cf42b 100644
+--- a/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -190,12 +190,12 @@ public abstract class BlockBehaviour implements FeatureElement {
+                     // CraftBukkit end
+                 }
+ 
+-                state.spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack);
++                state.mcc$spawnAfterBreak(level, pos, ItemStack.EMPTY, doDropExperienceHack);
+                 state.getDrops(params).forEach(stack -> onHit.accept(stack, pos));
+             }
+ 
+             level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+-            block.wasExploded(level, pos, explosion);
++            state.mcc$wasExploded(level, pos, explosion);
+         }
+     }
+ 
+@@ -436,7 +436,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+         return this.properties.destroyTime;
+     }
+ 
+-    public abstract static class BlockStateBase extends StateHolder<Block, BlockState> implements TypedInstance<Block>, ca.spottedleaf.moonrise.patches.starlight.blockstate.StarlightAbstractBlockState, ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState { // Paper - rewrite chunk system // Paper - optimise collisions
++    public abstract static class BlockStateBase extends StateHolder<Block, BlockState> implements TypedInstance<Block>, ca.spottedleaf.moonrise.patches.starlight.blockstate.StarlightAbstractBlockState, ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState, de.verdox.mccreativelab.behaviour.block.BehaviorBlockState { // Paper - rewrite chunk system // Paper - optimise collisions
+         private static final Direction[] DIRECTIONS = Direction.values();
+         private static final VoxelShape[] EMPTY_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.empty()));
+         private static final VoxelShape[] FULL_BLOCK_OCCLUSION_SHAPES = Util.make(new VoxelShape[DIRECTIONS.length], s -> Arrays.fill(s, Shapes.block()));
+@@ -974,7 +974,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+         }
+ 
+         public void spawnAfterBreak(final ServerLevel level, final BlockPos pos, final ItemStack tool, final boolean dropExperience) {
+-            this.getBlock().spawnAfterBreak(this.asState(), level, pos, tool, dropExperience);
++            this.getBlock().mcc$spawnAfterBreak(this.asState(), level, pos, tool, dropExperience);
+             if (dropExperience) this.getBlock().popExperience(level, pos, this.getBlock().getExpDrop(this.asState(), level, pos, tool, true)); // Paper - Properly handle xp dropping
+         }
+ 
+@@ -1040,7 +1040,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+             return this.replaceable;
+         }
+ 
+-        public boolean canSurvive(final LevelReader level, final BlockPos pos) {
++        public boolean old$canSurvive(final LevelReader level, final BlockPos pos) {
+             return this.getBlock().canSurvive(this.asState(), level, pos);
+         }
+ 
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 76dae652c910e36c860791a8285bd9fee466d5b9..002ed86631f88932d1702a7b688edd60788dce49 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -157,6 +157,9 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+     ) {
+         super(pos, upgradeData, level, PalettedContainerFactory.create(net.minecraft.server.MinecraftServer.getServer().registryAccess()), inhabitedTime, sections, blendingData); // Paper - Anti-Xray - The world isn't ready yet, use server singleton for registry
+         this.level = (ServerLevel) level; // CraftBukkit - type
++        for (int index = 0; index < this.sections.length; index++) {
++            this.sections[index].init(level, pos, level.getSectionYFromSectionIndex(index));
++        }
+         this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
+ 
+         for (Heightmap.Types type : Heightmap.Types.values()) {
+@@ -421,7 +424,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         if ((blockChanged || newBlock instanceof BaseRailBlock)
+             && this.level instanceof ServerLevel serverLevel
+             && ((flags & Block.UPDATE_NEIGHBORS) != 0 || movedByPiston)) {
+-            oldState.affectNeighborsAfterRemoval(serverLevel, pos, movedByPiston);
++            oldState.mcc$onRemove(serverLevel, pos, state, movedByPiston);
+         }
+ 
+         if (!section.getBlockState(localX, localY, localZ).is(newBlock)) {
+@@ -429,7 +432,7 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         }
+ 
+         if (!this.level.isClientSide() && (flags & Block.UPDATE_SKIP_ON_PLACE) == 0 && (!this.level.captureBlockStates || newBlock instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+-            state.onPlace(this.level, pos, oldState, movedByPiston);
++            state.mcc$onPlace(this.level, pos, oldState, movedByPiston);
+         }
+ 
+         if (state.hasBlockEntity() && section.getBlockState(localX, localY, localZ).is(newBlock)) {
+diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
+index 4e1359f85d66185c57a27302fd4672cd7e265874..fc3e6a8bb27e420271412f07832cc0696a2eb73a 100644
+--- a/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -14,6 +14,9 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+     private short fluidCount;
+     private short tickingBlockCount;
+     private short tickingFluidCount;
++    private net.minecraft.world.level.@org.jspecify.annotations.Nullable Level level;
++    private net.minecraft.world.level.@org.jspecify.annotations.Nullable ChunkPos chunkPos;
++    private int chunkSectionY;
+     private final PalettedContainer<BlockState> states;
+     private PalettedContainer<Holder<Biome>> biomes; // CraftBukkit - read/write
+ 
+@@ -48,6 +51,10 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+         this.tickingFluidCount = source.tickingFluidCount;
+         this.states = source.states.copy();
+         this.biomes = source.biomes.copy();
++        this.level = source.level;
++        this.chunkPos = source.chunkPos;
++        this.chunkSectionY = source.chunkSectionY;
++        this.recalcBlockCounts();
+     }
+ 
+     public LevelChunkSection(final PalettedContainer<BlockState> states, final PalettedContainer<Holder<Biome>> biomes) { // CraftBukkit - read/write
+@@ -65,6 +72,10 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+         this.states = containerFactory.createForBlockStates(level, chunkPos, chunkSectionY);
+         // Paper end - Anti-Xray - Add parameters
+         this.biomes = containerFactory.createForBiomes();
++        this.level = level;
++        this.chunkPos = chunkPos;
++        this.chunkSectionY = chunkSectionY;
++        this.recalcBlockCounts();
+     }
+ 
+     public BlockState getBlockState(final int sectionX, final int sectionY, final int sectionZ) {
+@@ -111,8 +122,8 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+             }
+         }
+ 
+-        final boolean oldTicking = oldState.isRandomlyTicking();
+-        final boolean newTicking = newState.isRandomlyTicking();
++        final boolean oldTicking = this.mcc$isRandomlyTicking(oldState, x, y, z);
++        final boolean newTicking = this.mcc$isRandomlyTicking(newState, x, y, z);
+         if (oldTicking != newTicking) {
+             final ca.spottedleaf.moonrise.common.list.ShortList tickingBlocks = this.tickingBlocks;
+             final short position = (short)(x | (z << 4) | (y << (4+4)));
+@@ -136,7 +147,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+ 
+         if (!previous.isAir()) {
+             this.nonEmptyBlockCount--;
+-            if (previous.isRandomlyTicking()) {
++            if (this.mcc$isRandomlyTicking(previous, sectionX, sectionY, sectionZ)) {
+                 this.tickingBlockCount--;
+             }
+ 
+@@ -151,7 +162,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+ 
+         if (!state.isAir()) {
+             this.nonEmptyBlockCount++;
+-            if (state.isRandomlyTicking()) {
++            if (this.mcc$isRandomlyTicking(state, sectionX, sectionY, sectionZ)) {
+                 this.tickingBlockCount++;
+             }
+ 
+@@ -226,7 +237,16 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+                     this.specialCollidingBlocks += (short)paletteCount;
+                 }
+                 this.nonEmptyBlockCount += (short)paletteCount;
+-                if (state.isRandomlyTicking()) {
++                if (this.level != null && this.chunkPos != null) {
++                    final short[] coordinates = blockCountingEntry.coords.elements();
++                    for (int index = 0; index < paletteCount; index++) {
++                        short packed = coordinates[index];
++                        if (this.mcc$isRandomlyTicking(state, packed & 15, (packed >>> 8) & 15, (packed >>> 4) & 15)) {
++                            this.tickingBlockCount++;
++                            this.tickingBlocks.add(packed);
++                        }
++                    }
++                } else if (state.isRandomlyTicking()) {
+                     final it.unimi.dsi.fastutil.shorts.ShortArrayList coordinates = blockCountingEntry.coords;
+                     this.tickingBlockCount += (short) paletteCount;
+                     final short[] raw = coordinates.elements();
+@@ -344,4 +364,18 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+     public LevelChunkSection copy() {
+         return new LevelChunkSection(this);
+     }
++    private boolean mcc$isRandomlyTicking(BlockState state, int x, int y, int z) {
++        return this.level == null || this.chunkPos == null ? state.isRandomlyTicking()
++            : state.mcc$isRandomlyTicking(this.level, this.chunkPos.getMinBlockX() + x, (this.chunkSectionY << 4) + y, this.chunkPos.getMinBlockZ() + z, state);
++    }
++
++    public void init(net.minecraft.world.level.Level level, net.minecraft.world.level.ChunkPos pos, int sectionY) {
++        if (this.level == level && java.util.Objects.equals(this.chunkPos, pos) && this.chunkSectionY == sectionY) {
++            return;
++        }
++        this.level = level;
++        this.chunkPos = pos;
++        this.chunkSectionY = sectionY;
++        this.recalcBlockCounts();
++    }
+ }
+diff --git a/net/minecraft/world/level/levelgen/blockpredicates/WouldSurvivePredicate.java b/net/minecraft/world/level/levelgen/blockpredicates/WouldSurvivePredicate.java
+index 2baab7b3aa0bfe8e9b9b5964f99ae77dcb041a6a..7492cb02a0a6ef7ad0e1ac78652caa06eeea3731 100644
+--- a/net/minecraft/world/level/levelgen/blockpredicates/WouldSurvivePredicate.java
++++ b/net/minecraft/world/level/levelgen/blockpredicates/WouldSurvivePredicate.java
+@@ -24,7 +24,7 @@ public class WouldSurvivePredicate implements BlockPredicate {
+ 
+     @Override
+     public boolean test(final LevelAccessor level, final BlockPos origin) {
+-        return this.state.canSurvive(level, origin.offset(this.offset));
++        return this.state.mcc$canSurvive(level, origin.offset(this.offset));
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/level/levelgen/feature/BambooFeature.java b/net/minecraft/world/level/levelgen/feature/BambooFeature.java
+index c11392b727c7bf00412d05d3c50c9082e8b6e03d..45d20c1f064dac47a9cc1129d369a5347a3a6688 100644
+--- a/net/minecraft/world/level/levelgen/feature/BambooFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/BambooFeature.java
+@@ -40,7 +40,7 @@ public record BambooFeature(float probability) implements Feature {
+         BlockPos.MutableBlockPos bambooPos = origin.mutable();
+         BlockPos.MutableBlockPos podzolPos = origin.mutable();
+         if (level.isEmptyBlock(bambooPos)) {
+-            if (Blocks.BAMBOO.defaultBlockState().canSurvive(level, bambooPos)) {
++            if (Blocks.BAMBOO.defaultBlockState().mcc$canSurvive(level, bambooPos)) {
+                 int height = random.nextInt(12) + 5;
+                 if (random.nextFloat() < this.probability) {
+                     int r = random.nextInt(4) + 1;

@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Sat, 18 May 2024 23:18:52 +0000
+Subject: [PATCH] Adding the ability to change the server resourcepack
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 70341319ef4727fffd598d2792cb8aa73c3aafea..a9771cee72b4d615013347710e437ae58e095332 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -337,6 +337,16 @@ public final class Bukkit {
+         return server.getServerResourcePack();
+     }
+ 
++    // Paper start - Make server resourcepack changeable
++    /**
++     * Sets the server resource pack
++     * @param resourcePack the resource pack
++     */
++    public static void setServerResourcePack(@Nullable ResourcePack resourcePack){
++        server.setServerResourcePack(resourcePack);
++    }
++    // Paper end - Make server resourcepack changeable
++
+     /**
+      * Get the ServerTick Manager.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index d30cccedeb467567d95849ca945689e4b9cbba4f..cbd33bc956054fcdb67f0e180a092f3cda3fbd5d 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -289,6 +289,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @Nullable
+     public ResourcePack getServerResourcePack();
+ 
++    // Paper start - Make server resourcepack changeable
++    /**
++     * Sets the server resource pack
++     * @param resourcePack the resource pack
++     */
++    public void setServerResourcePack(@Nullable ResourcePack resourcePack);
++    // Paper end - Make server resourcepack changeable
++
+     /**
+      * Gets the server resource pack uri, or empty string if not specified.
+      *
+diff --git a/src/main/java/org/bukkit/packs/ResourcePack.java b/src/main/java/org/bukkit/packs/ResourcePack.java
+index 2862fb5bab340f027fecacf7ccf0df50f26a91bf..7a286e49f5797b19319b482d1ab1188d4ef9fcce 100644
+--- a/src/main/java/org/bukkit/packs/ResourcePack.java
++++ b/src/main/java/org/bukkit/packs/ResourcePack.java
+@@ -41,7 +41,7 @@ public interface ResourcePack {
+      * @return the prompt
+      */
+     @Nullable
+-    public String getPrompt();
++    public net.kyori.adventure.text.Component getPrompt(); // Paper - Make server resourcepack changeable
+ 
+     /**
+      * Gets if the resource pack is required by the server.

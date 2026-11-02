@@ -1,0 +1,192 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Tue, 28 Jan 2025 21:36:54 +0000
+Subject: [PATCH] Add ItemBehavior
+
+
+diff --git a/net/minecraft/world/inventory/CartographyTableMenu.java b/net/minecraft/world/inventory/CartographyTableMenu.java
+index 1e9fda6d0437b0e4e209b9c7dc115e55b166f7aa..cd7f31d479c3506e1e5c3ede5ffa6f318eecc8cb 100644
+--- a/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -100,7 +100,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             public void onTake(final Player player, final ItemStack carried) {
+                 CartographyTableMenu.this.slots.get(0).remove(1);
+                 CartographyTableMenu.this.slots.get(1).remove(1);
+-                carried.getItem().onCraftedBy(carried, player);
++                carried.onCraftedBy(player, carried.getCount());
+                 access.execute((level, pos) -> {
+                     long gameTime = level.getGameTime();
+                     if (CartographyTableMenu.this.lastSoundTime != gameTime) {
+@@ -114,7 +114,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             @Override
+             public ItemStack safeClone(final Player player) {
+                 ItemStack result = super.safeClone(player);
+-                result.getItem().onCraftedBy(result, player);
++                result.onCraftedBy(player, result.getCount());
+                 return result;
+             }
+         });
+@@ -188,7 +188,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+             ItemStack stack = slot.getItem();
+             clicked = stack.copy();
+             if (slotIndex == 2) {
+-                stack.getItem().onCraftedBy(stack, player);
++                stack.onCraftedBy(player, stack.getCount());
+                 if (!this.moveItemStackTo(stack, 3, 39, true)) {
+                     return ItemStack.EMPTY;
+                 }
+diff --git a/net/minecraft/world/inventory/CraftingMenu.java b/net/minecraft/world/inventory/CraftingMenu.java
+index 48b46c7a4d33f9f0e6dc67469ac00d0312b19af1..109dd7db40ea65f44cc52832dd7abbe5b46ac155 100644
+--- a/net/minecraft/world/inventory/CraftingMenu.java
++++ b/net/minecraft/world/inventory/CraftingMenu.java
+@@ -142,7 +142,7 @@ public class CraftingMenu extends AbstractCraftingMenu {
+             ItemStack stack = slot.getItem();
+             clicked = stack.copy();
+             if (slotIndex == 0) {
+-                stack.getItem().onCraftedBy(stack, player);
++                stack.onCraftedBy(player, stack.getCount());
+                 if (!this.moveItemStackTo(stack, 10, 46, true)) {
+                     return ItemStack.EMPTY;
+                 }
+diff --git a/net/minecraft/world/inventory/ShulkerBoxSlot.java b/net/minecraft/world/inventory/ShulkerBoxSlot.java
+index 0f402f403b06e44bcd9c7060c56ae61f8c82da3b..f906f3c61c7dee53f83004fa3bbe746d9a79a02e 100644
+--- a/net/minecraft/world/inventory/ShulkerBoxSlot.java
++++ b/net/minecraft/world/inventory/ShulkerBoxSlot.java
+@@ -10,6 +10,6 @@ public class ShulkerBoxSlot extends Slot {
+ 
+     @Override
+     public boolean mayPlace(final ItemStack itemStack) {
+-        return itemStack.getItem().canFitInsideContainerItems();
++        return itemStack.canFitInsideContainerItems();
+     }
+ }
+diff --git a/net/minecraft/world/inventory/StonecutterMenu.java b/net/minecraft/world/inventory/StonecutterMenu.java
+index 712020d8cd5e51617db8420f35404479028eace8..8e7687baf3251fc635c828fe670473fdfeaf8bb6 100644
+--- a/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -240,7 +240,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             Item item = stack.getItem();
+             clicked = stack.copy();
+             if (slotIndex == 1) {
+-                item.onCraftedBy(stack, player);
++                stack.onCraftedBy(player, stack.getCount());
+                 if (!this.moveItemStackTo(stack, 2, 38, true)) {
+                     return ItemStack.EMPTY;
+                 }
+diff --git a/net/minecraft/world/item/BlockItem.java b/net/minecraft/world/item/BlockItem.java
+index 68f1e9483b93ef071877a4c99f4bd14e0d363145..415d0258695c315506d0722d10146f5783100278 100644
+--- a/net/minecraft/world/item/BlockItem.java
++++ b/net/minecraft/world/item/BlockItem.java
+@@ -68,7 +68,7 @@ public class BlockItem extends Item {
+             return InteractionResult.FAIL;
+         }
+ 
+-        BlockState placementState = this.getPlacementState(updatedPlaceContext);
++        BlockState placementState = de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.placeBlockAction(updatedPlaceContext.getPlayer(), updatedPlaceContext.getClickedPos(), updatedPlaceContext.getLevel(), updatedPlaceContext.getItemInHand(), updatedPlaceContext.getLevel().getBlockState(updatedPlaceContext.getClickedPos()), () -> this.getPlacementState(updatedPlaceContext));
+         final org.bukkit.block.BlockState previousState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(updatedPlaceContext.getLevel(), updatedPlaceContext.getClickedPos()); // Paper - Reset placed block on exception
+         if (placementState == null) {
+             return InteractionResult.FAIL;
+diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
+index adb232a3fbfaa28d634c8a6fe7c15dfb7e0d7eb5..09c51f1c935ab0143afaeb7d59c973a15f68283c 100644
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -373,6 +373,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+     public InteractionResult useOn(final UseOnContext context) {
+         Player player = context.getPlayer();
+         BlockPos pos = context.getClickedPos();
++        ItemStack blockUsedToPlaceBlock = this.copy();
+         if (player != null && !player.getAbilities().mayBuild && !this.canPlaceOnBlockInAdventureMode(new BlockInWorld(context.getLevel(), pos, false))) {
+             return InteractionResult.PASS;
+         } else {
+@@ -394,7 +395,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+             org.bukkit.TreeType treeType;
+             InteractionResult result;
+             try {
+-                result = usedItem.useOn(context);
++                result = de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.useOn(this, context);
+             } finally {
+                 level.captureBlockStates = false;
+                 level.captureTreeGeneration = false;
+@@ -507,6 +508,12 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+                     }
+ 
+                     player.awardStat(Stats.ITEM_USED.get(usedItem));
++                    if (placeEvent != null && !placeEvent.isCancelled() && placeEvent.canBuild()) {
++                        for (org.bukkit.craftbukkit.block.CraftBlockState snapshot : capturedBlockStates) {
++                            BlockPos placedBlockPos = snapshot.getPosition();
++                            de.verdox.mccreativelab.behaviour.BlockBehaviourUtil.getInstance().onPlayerPlaceCallback(player, blockUsedToPlaceBlock, level.getBlockState(placedBlockPos), level, placedBlockPos);
++                        }
++                    }
+                     ItemStack transformTo = success.heldItemTransformedTo() == null ? this : success.heldItemTransformedTo();
+                     ItemStack resultItemStack = transformTo.applyAfterUseComponentSideEffects(player, stackBeforeUse);
+                     return success.heldItemTransformedTo(resultItemStack);
+@@ -767,10 +774,11 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+         if (usedItem.mineBlock(this, level, state, pos, owner)) {
+             owner.awardStat(Stats.ITEM_USED.get(usedItem));
+         }
++        de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.mineBlock(this, level, state, pos, owner);
+     }
+ 
+     public boolean isCorrectToolForDrops(final BlockState state) {
+-        return this.getItem().isCorrectToolForDrops(this, state);
++        return de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.isCorrectToolForDrops(this, state);
+     }
+ 
+     public InteractionResult interactLivingEntity(final Player player, final LivingEntity target, final InteractionHand hand) {
+@@ -782,7 +790,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+             }
+         }
+ 
+-        return this.getItem().interactLivingEntity(this, player, target, hand);
++        return de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.interactLivingEntity(this, player, target, hand);
+     }
+ 
+     public ItemStack copy() {
+@@ -797,6 +805,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+         }
+ 
+         ItemStack copy = new ItemStack(originalItem ? this.item : this.typeHolder(), this.count, this.components.copy()); // Paper - Perf: Optimize Hoppers
++        copy.itemBehaviour = this.itemBehaviour;
+         copy.setPopTime(this.getPopTime());
+         return copy;
+     }
+@@ -929,6 +938,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+     public void onCraftedBy(final Player player, final int craftCount) {
+         player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), craftCount);
+         this.getItem().onCraftedBy(this, player);
++        de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.onCraftedBy(this, player.level(), player);
+     }
+ 
+     public void onCraftedBySystem(final Level level) {
+@@ -1348,7 +1358,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+     }
+ 
+     public void onDestroyed(final ItemEntity itemEntity) {
+-        this.getItem().onDestroyed(itemEntity);
++        de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.onDestroyed(this, itemEntity);
+     }
+ 
+     public boolean canBeHurtBy(final DamageSource source) {
+@@ -1371,4 +1381,9 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+             .or(() -> Optional.ofNullable(this.getItem().getItemDamageSource(attacker)))
+             .orElseGet(attacker::createDamageSource);
+     }
++    public @Nullable de.verdox.mccreativelab.behavior.ItemBehaviour itemBehaviour;
++
++    public boolean canFitInsideContainerItems() {
++        return de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.canFitInsideContainerItems(this);
++    }
+ }
+diff --git a/net/minecraft/world/item/component/BundleContents.java b/net/minecraft/world/item/component/BundleContents.java
+index d8e31a85b64ca3c26d1750ac9c6ba51b82b38962..b550b0623be03b7564baad9cd3e70215512aaf58 100644
+--- a/net/minecraft/world/item/component/BundleContents.java
++++ b/net/minecraft/world/item/component/BundleContents.java
+@@ -87,7 +87,7 @@ public final class BundleContents implements ContainerComponent<BundleContents>,
+     }
+ 
+     public static boolean canItemBeInBundle(final ItemStack itemToAdd) {
+-        return !itemToAdd.isEmpty() && itemToAdd.getItem().canFitInsideContainerItems();
++        return !itemToAdd.isEmpty() && itemToAdd.canFitInsideContainerItems();
+     }
+ 
+     // Paper start - correct bundle inventory action

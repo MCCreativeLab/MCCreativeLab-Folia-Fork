@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: verdox <mail.ysp@web.de>
+Date: Thu, 30 Jan 2025 13:28:14 +0000
+Subject: [PATCH] Add EntityBehaviour
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAnimals.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAnimals.java
+index e10748f9d1cec70b57b229aa416fa00606173029..81474627d97232f5fc8d09d9dfc6c7d2a960cdc1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAnimals.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAnimals.java
+@@ -50,7 +50,7 @@ public class CraftAnimals extends CraftAgeable implements Animals {
+ 
+     @Override
+     public boolean isBreedItem(ItemStack itemStack) {
+-        return this.getHandle().isFood(CraftItemStack.asNMSCopy(itemStack));
++        return this.getHandle().mcc$isFood(CraftItemStack.asNMSCopy(itemStack));
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 119959cd00560577038c582349bdf039ca7ae4bb..3f5a7efab729e2a178636ee851b429ff57148d6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -720,7 +720,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     @Override
+     public boolean getCanPickupItems() {
+         if (this.getHandle() instanceof Mob) {
+-            return this.getHandle().canPickUpLoot();
++            return ((Mob) this.getHandle()).mcc$canPickUpLoot();
+         } else {
+             return this.getHandle().bukkitPickUpLoot;
+         }
