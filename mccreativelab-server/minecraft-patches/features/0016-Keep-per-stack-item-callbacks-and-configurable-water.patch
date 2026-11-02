@@ -5,23 +5,25 @@ Subject: [PATCH] Keep per-stack item callbacks and configurable water damage
 
 
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 076a723ace9edd53618cab2a9e5ae6c3dbd2bca7..892ecc04ff72395779446ad4fff6c5385ca2159d 100644
+index a66f01754046bd9e3946552cac794b2f624214f9..d3205c5dc79d195d0eeab3f78ae07b8d23d5c9b7 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -3825,7 +3825,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3846,8 +3846,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             }
          }
          // Paper end - Add EntityMoveEvent
-         if (this.level() instanceof ServerLevel serverLevel && this.mcc$isSensitiveToWater() && this.isInWaterOrRain()) {
+-        if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
 -            this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
++        if (this.level() instanceof ServerLevel serverLevel && this.mcc$isSensitiveToWater() && this.isInWaterOrRain()) {
 +            this.hurtServer(serverLevel, this.damageSources().drown(), this.mcc$waterDamage());
          }
      }
  
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 4481789e4745c01094c4cdded285147c226ee09a..66b23a699b47d3be50f12b0a10da7c297a955b52 100644
+index 8d04d6802380bd7a0e0c29aad368d75e02b5693d..06601c7091fafb47ca0b0be0125db1c8adfebea9 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -527,7 +527,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -533,7 +533,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
      public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
          ItemStack stackBeforeUse = this.copy();
          boolean isInstantlyUsed = this.getUseDuration(player) <= 0;
@@ -30,7 +32,7 @@ index 4481789e4745c01094c4cdded285147c226ee09a..66b23a699b47d3be50f12b0a10da7c29
          if (isInstantlyUsed && result instanceof InteractionResult.Success success) {
              ItemStack transformTo = success.heldItemTransformedTo() == null ? this : success.heldItemTransformedTo();
              ItemStack resultItemStack = transformTo.applyAfterUseComponentSideEffects(player, stackBeforeUse);
-@@ -539,7 +539,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -545,7 +545,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
  
      public ItemStack finishUsingItem(final Level level, final LivingEntity livingEntity) {
          ItemStack stackBeforeUse = this.copy();

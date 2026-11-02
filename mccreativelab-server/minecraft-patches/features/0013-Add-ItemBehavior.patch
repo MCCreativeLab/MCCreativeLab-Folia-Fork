@@ -87,10 +87,10 @@ index 68f1e9483b93ef071877a4c99f4bd14e0d363145..415d0258695c315506d0722d10146f57
          if (placementState == null) {
              return InteractionResult.FAIL;
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index adb232a3fbfaa28d634c8a6fe7c15dfb7e0d7eb5..09c51f1c935ab0143afaeb7d59c973a15f68283c 100644
+index 34e2f33709007a821025c4efcc25c71bb7210b74..8d04d6802380bd7a0e0c29aad368d75e02b5693d 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -373,6 +373,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -372,6 +372,7 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
      public InteractionResult useOn(final UseOnContext context) {
          Player player = context.getPlayer();
          BlockPos pos = context.getClickedPos();
@@ -105,8 +105,8 @@ index adb232a3fbfaa28d634c8a6fe7c15dfb7e0d7eb5..09c51f1c935ab0143afaeb7d59c973a1
 -                result = usedItem.useOn(context);
 +                result = de.verdox.mccreativelab.behaviour.ItemBehaviourUtil.useOn(this, context);
              } finally {
-                 level.captureBlockStates = false;
-                 level.captureTreeGeneration = false;
+                 worldData.captureBlockStates = false; // Folia - region threading
+                 worldData.captureTreeGeneration = false; // Folia - region threading
 @@ -507,6 +508,12 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
                      }
  

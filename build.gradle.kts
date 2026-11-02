@@ -90,15 +90,22 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 subprojects {
     // A combined apply/rebuild invocation must finish the shared upstream checkout
     // before any subproject task reads it (paperweight-core does not model this).
+    // paperweight re-runs this build nested (RunNestedBuild) for applyAllPatches; the
+    // root patchDir tasks may be unresolvable by path string there, so resolve them
+    // by name on the root project and only add the ordering when they exist.
+    val orderingTaskNames = listOf(
+        "checkoutPaperRepo", "applyPaperCheckstyleFilePatches", "applyPaperCheckstyleFeaturePatches",
+        "applyPaperCheckstyleConfigFilePatches", "applyPaperCheckstyleConfigFeaturePatches")
     tasks.configureEach {
-        mustRunAfter(":checkoutPaperRepo", ":applyPaperCheckstyleFilePatches", ":applyPaperCheckstyleFeaturePatches",
-            ":applyPaperCheckstyleConfigFilePatches", ":applyPaperCheckstyleConfigFeaturePatches")
+        val existing = orderingTaskNames.mapNotNull { rootProject.tasks.findByName(it) }
+        if (existing.isNotEmpty()) mustRunAfter(existing)
     }
     // These paperweight inputs come from the checkout managed by the root patcher.
     tasks.matching {
         it.name in setOf("collectPaperATsFromPatches", "filterPaperServerFromPaper", "importPaperLibraryFiles")
     }.configureEach {
-        dependsOn(":checkoutPaperRepo")
+        val checkout = rootProject.tasks.findByName("checkoutPaperRepo")
+        if (checkout != null) dependsOn(checkout)
     }
     apply(plugin = "java-library")
     apply(plugin = "maven-publish")
