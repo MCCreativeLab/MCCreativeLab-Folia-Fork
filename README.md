@@ -19,8 +19,8 @@ Basisschicht vendored:
 | `mccreativelab-server/minecraft-patches/features` | 0001–0011 | 2001–2017 |
 
 MCC-Patches behalten ihre alte Nummer unter Präfix `2` (MCC `0009` → `2009`).
-Noch nicht portierte MCC-Patches liegen in `docs/folia/pending-patches/` und werden
-einzeln zurückgeholt (siehe PORT_STATUS).
+Alle MCC-Patches sind portiert; `docs/folia/pending-patches/` ist leer (Parkliste
+des M1-Scaffolds, referenziert in der Port-Historie).
 
 ## Build
 

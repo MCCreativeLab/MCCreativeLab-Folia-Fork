@@ -46,7 +46,7 @@ index 7ac4450c6e3f0754303265fadb27b39bf91603a6..d6d6af955e2568a2838a516b14007e6e
      }
  
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d35b97564 100644
+index c4969ffa42a528a2b5af6f1ec303a1413a7b3fe1..f96634586639ca9bc7c1c4e38c2e617be671fa45 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -841,8 +841,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -59,17 +59,18 @@ index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d
              //this.advanceWeatherCycle(); // Folia - regionised ticking
              profiler.pop();
          }
-@@ -1002,8 +1001,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1002,10 +1001,6 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  this.resetWeatherCycle();
              }
          }
+-<<<<<<< HEAD
 -r
--    }
-+r    }
+-=======
+->>>>>>> c257b56 (fixup! Add BlockBehavior)
+     }
      // Folia end - region threading
  
-     @Override
-@@ -1020,8 +1018,7 @@ r
+@@ -1023,8 +1018,7 @@ r
              long time = regionizedWorldData.getRedstoneGameTime() + 1L; // Folia - region threading
              regionizedWorldData.setRedstoneGameTime(time); // Folia - region threading
              Profiler.get().push("scheduledFunctions");
@@ -79,7 +80,7 @@ index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d
          }
      }
  
-@@ -1029,9 +1026,8 @@ r
+@@ -1032,9 +1026,8 @@ r
          final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
          for (CustomSpawner spawner : this.customSpawners) {
              final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
@@ -91,7 +92,7 @@ index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d
      }
  
      private void wakeUpAllPlayers() {
-@@ -1092,7 +1088,7 @@ r
+@@ -1095,7 +1088,7 @@ r
                  if (doubleTickFluids) {
                      final FluidState fluidState = state.getFluidState();
                      if (fluidState.isRandomlyTicking()) {
@@ -100,7 +101,7 @@ index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d
                      }
                  }
              }
-@@ -1450,7 +1446,7 @@ r
+@@ -1453,7 +1446,7 @@ r
          BlockState blockState = this.getBlockState(pos);
          FluidState fluidState = blockState.getFluidState();
          if (fluidState.is(type)) {
@@ -109,7 +110,7 @@ index 57c726adef1f092318e6f8e84c73ea3ec9750d4f..4745e834e6856c377fd582f108289a1d
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1500,7 +1496,7 @@ r
+@@ -1503,7 +1496,7 @@ r
          try {
          // Folia end - profiler
          if (isActive) { // Paper - EAR 2

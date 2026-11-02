@@ -17,7 +17,7 @@ index 451a1eafaeb1a0693cf530af8836c7fc27c16745..7ac4450c6e3f0754303265fadb27b39b
  
          // Paper start - Add Velocity IP Forwarding Support
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3ec9750d4f 100644
+index 3d352bb9b0606236d789a70897d7bec12bcf6846..c4969ffa42a528a2b5af6f1ec303a1413a7b3fe1 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -841,7 +841,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
@@ -29,15 +29,18 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
              profiler.popPush("weather");
              //this.advanceWeatherCycle(); // Folia - regionised ticking
              profiler.pop();
-@@ -1002,6 +1002,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1002,6 +1002,10 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  this.resetWeatherCycle();
              }
          }
++<<<<<<< HEAD
 +r
++=======
++>>>>>>> c257b56 (fixup! Add BlockBehavior)
      }
      // Folia end - region threading
  
-@@ -1019,7 +1020,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1019,7 +1023,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              long time = regionizedWorldData.getRedstoneGameTime() + 1L; // Folia - region threading
              regionizedWorldData.setRedstoneGameTime(time); // Folia - region threading
              Profiler.get().push("scheduledFunctions");
@@ -46,7 +49,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
              Profiler.get().pop();
          }
      }
-@@ -1028,8 +1029,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1028,8 +1032,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          final ca.spottedleaf.leafprofiler.RegionizedProfiler.Handle profiler = io.papermc.paper.threadedregions.TickRegionScheduler.getProfiler(); // Folia - profiler
          for (CustomSpawner spawner : this.customSpawners) {
              final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
@@ -57,7 +60,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
          }
      }
  
-@@ -1087,11 +1088,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1087,11 +1091,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  // do not use a mutable pos, as some random tick implementations store the input without calling immutable()!
                  final BlockPos pos = new BlockPos((location & 15) | offsetX, ((location >>> (4 + 4)) & 15) | offsetY, ((location >>> 4) & 15) | offsetZ);
  
@@ -71,7 +74,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
                      }
                  }
              }
-@@ -1189,7 +1190,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1189,7 +1193,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              Biome.Precipitation precipitation = biome.getPrecipitationAt(belowPos, this.getSeaLevel());
              if (precipitation != Biome.Precipitation.NONE) {
                  BlockState belowState = this.getBlockState(belowPos);
@@ -80,7 +83,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
              }
          }
      }
-@@ -1449,7 +1450,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1449,7 +1453,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          BlockState blockState = this.getBlockState(pos);
          FluidState fluidState = blockState.getFluidState();
          if (fluidState.is(type)) {
@@ -89,7 +92,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1462,7 +1463,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1462,7 +1466,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
      private void tickBlock(final BlockPos pos, final Block type) {
          BlockState state = this.getBlockState(pos);
          if (state.is(type)) {
@@ -98,7 +101,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
          }
          // Paper start - rewrite chunk system
          if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
-@@ -1499,7 +1500,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1499,7 +1503,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          try {
          // Folia end - profiler
          if (isActive) { // Paper - EAR 2
@@ -108,7 +111,7 @@ index 3d352bb9b0606236d789a70897d7bec12bcf6846..57c726adef1f092318e6f8e84c73ea3e
          // Folia start - region threading
          if (!ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(entity)) {
              // removed from region while ticking
-@@ -1509,7 +1511,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1509,7 +1514,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              // portalled
              return;
          }

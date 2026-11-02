@@ -5,6 +5,20 @@ Subject: [PATCH] Preserve section snapshots and handle absent Paper block
  coordinates
 
 
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index f96634586639ca9bc7c1c4e38c2e617be671fa45..806da320dd5437bb673293b2fe8a7be41559c6e8 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1027,7 +1027,8 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         for (CustomSpawner spawner : this.customSpawners) {
+             final int customSpawnerTimer = profiler.getOrCreateTimerAndStart(() -> "Misc Spawner: ".concat(spawner.getClass().getName())); try { // Folia - profiler
+             spawner.tick(this, spawnEnemies);
+-            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profilerr        }
++            } finally { profiler.stopTimer(customSpawnerTimer); } // Folia - profiler
++        }
+     }
+ 
+     private void wakeUpAllPlayers() {
 diff --git a/net/minecraft/world/level/chunk/LevelChunkSection.java b/net/minecraft/world/level/chunk/LevelChunkSection.java
 index fc3e6a8bb27e420271412f07832cc0696a2eb73a..07b5e6059e18fb977798b435311395ef648bc7df 100644
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
